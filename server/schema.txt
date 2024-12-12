@@ -1,0 +1,121 @@
+CREATE TABLE users (
+    userId INT PRIMARY KEY IDENTITY(1,1),
+    userName NVARCHAR(100) NOT NULL,
+    email NVARCHAR(100) UNIQUE NOT NULL,
+    passwordHash NVARCHAR(255) NOT NULL,
+    role NVARCHAR(50) DEFAULT 'Employee',
+    createdAt DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE Attendance (
+    attendanceId INT PRIMARY KEY IDENTITY(1,1),
+    userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),
+    checkInTime DATETIME NOT NULL,
+    checkOutTime DATETIME NULL,
+    status AS 
+        CASE 
+            WHEN checkOutTime IS NULL THEN 'Active' 
+            ELSE 'Not Active' 
+        END PERSISTED,
+    sessionDuration AS DATEDIFF(MINUTE, checkInTime, checkOutTime) PERSISTED,
+    createdAt DATETIME DEFAULT GETDATE()
+);
+
+
+CREATE TABLE locationLogs (
+    locationId INT PRIMARY KEY IDENTITY(1,1),
+    attendanceId INT NOT NULL FOREIGN KEY REFERENCES attendance(attendanceId),
+    latitude FLOAT NOT NULL,
+    longitude FLOAT NOT NULL,
+    loggedAt DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE leaveBalance (
+    balanceId INT PRIMARY KEY IDENTITY(1,1),
+    userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),
+    year INT NOT NULL, -- The calendar year for the leave balance
+    totalLeaves INT DEFAULT 12, -- Default annual allotment
+    usedLeaves INT DEFAULT 0, -- Leaves already used
+    remainingLeaves AS (totalLeaves - usedLeaves) PERSISTED, -- Automatically calculated
+    lastUpdated DATETIME DEFAULT GETDATE()
+);
+
+    CREATE TABLE LeaveRequests (
+        LeaveId INT PRIMARY KEY IDENTITY(1,1),
+        UserId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
+        LeaveType NVARCHAR(50) NOT NULL, -- e.g., Sick Leave, Casual Leave
+        StartDate DATE NOT NULL,
+        EndDate DATE NOT NULL,
+        Status NVARCHAR(50) DEFAULT 'Pending', -- Pending, Approved, Rejected
+        Reason NVARCHAR(255) NULL,
+        RequestedAt DATETIME DEFAULT GETDATE(),
+        ApprovedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+        ApprovedAt DATETIME NULL,
+        RejectedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+        RejectedAt DATETIME NULL,
+        CONSTRAINT CHECK_EndDate CHECK (EndDate >= StartDate)
+    );
+
+Create TRIGGER createLeaveBalance
+ON users
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO leaveBalance (userId, year, totalLeaves)
+    SELECT userId, YEAR(GETDATE()), 12
+    FROM inserted;
+END;
+
+
+
+Create PROCEDURE approveLeave
+    @LeaveId INT,
+    @actionId INT,
+    @applicantUserId INT,
+	@action VARCHAR(50)
+AS
+BEGIN
+	IF @action = 'Approved'
+		BEGIN
+			BEGIN TRANSACTION;
+				UPDATE LeaveRequests
+				SET Status = 'Approved', ApprovedBy =  @actionId, ApprovedAt = GETDATE()
+				WHERE LeaveId = @LeaveId;
+
+				IF @@ROWCOUNT = 0
+				BEGIN
+					ROLLBACK TRANSACTION;
+					RAISERROR('LeaveId does not exist.', 16, 1); 
+					RETURN; 
+				END
+
+				UPDATE LeaveBalance
+				SET UsedLeaves = UsedLeaves + 1
+				WHERE UserId = @applicantUserId;
+
+				IF @@ROWCOUNT = 0
+				BEGIN
+					ROLLBACK TRANSACTION;
+					RAISERROR('UserId does not exist or no leave balance to update.', 16, 1);
+					RETURN;
+				END
+			COMMIT TRANSACTION;
+	    END
+	ELSE IF @action = 'Rejected'
+	BEGIN
+		BEGIN TRANSACTION;
+			update LeaveRequests set status = 'Rejected', RejectedBy =  @actionId , RejectedAt = GETDATE() where LeaveId = @LeaveId;
+			IF @@ROWCOUNT = 0
+				BEGIN
+					ROLLBACK TRANSACTION;
+					RAISERROR('LeaveId does not exist.', 16, 1); 
+					RETURN; 
+				END
+		COMMIT TRANSACTION;
+	END
+	ELSE
+    BEGIN
+        RAISERROR('Invalid action provided.', 16, 1);
+        RETURN;
+    END
+END;
