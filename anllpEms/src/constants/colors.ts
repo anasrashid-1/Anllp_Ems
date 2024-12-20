@@ -15,6 +15,7 @@ export const COLORS = {
   LIGHT_GREEN_TINT: '#eaf4ec', // Light green tint for background or borders
   DARK_GREEN: '#1b5e20', // Darker green for secondary text or details
   LIGHT_GREEN: '#c2e8b8',
+  PRIMARY_RED: 'red',
 };
 
 export default COLORS;

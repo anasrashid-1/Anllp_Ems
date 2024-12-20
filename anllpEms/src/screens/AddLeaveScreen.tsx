@@ -6,6 +6,7 @@ import {CalendarIcon} from 'react-native-heroicons/solid';
 import { Dialog, Portal, Button } from "react-native-paper";
 import COLORS from "../constants/colors";
 import { AuthContext } from "../store/auth-context";
+import DialogComp from "../components/DialogComp";
 
 interface FormData {
     subject: string;
@@ -105,7 +106,7 @@ const AddLeaveScreen: React.FC = () => {
                     endDate: new Date(),
                 });
             } else {
-                // showDialog(result.message || "Something went wrong.");
+                showDialog(result.message || "Something went wrong.", "alert");
             }
         } catch (error: any) {
             showDialog(error.message || "Something went wrong", "alert");
@@ -212,20 +213,9 @@ const AddLeaveScreen: React.FC = () => {
                 />
             )}
 
-            <Portal>
-                <Dialog visible={dialogState.dialogVisible} onDismiss={() => setDialogState({ ...dialogState, dialogVisible: false })} style={styles.dialog}>
-                    <Dialog.Icon icon={dialogState.dialogIcon}
-                        color={dialogState.dialogIcon === "check-circle" ? "green" : dialogState.dialogIcon === "alert" ? "red" : "gray"}
-                        size={40}
-                    />
-                    <Dialog.Content style={{ marginTop: 30 }}>
-                        <Text>{dialogState.dialogMessage}</Text>
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => setDialogState({ ...dialogState, dialogVisible: false })} labelStyle={{ color: COLORS.ACCENT_ORANGE }}>OK</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            {/* for dialog */}
+            <DialogComp dialogState={dialogState} setDialogState={setDialogState}/>
+
         </View>
     );
 };
@@ -311,9 +301,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
     },
-
-    dialog: {
-        backgroundColor: 'white',
-        borderRadius: 8,
-    }
 });

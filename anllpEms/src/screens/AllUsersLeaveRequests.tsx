@@ -5,6 +5,7 @@ import { UserCircleIcon } from 'react-native-heroicons/solid';
 import { Dropdown } from "react-native-element-dropdown";
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
+import DialogComp from '../components/DialogComp';
 
 interface LeaveRequest {
   LeaveId: number;
@@ -22,15 +23,25 @@ interface LeaveRequest {
   remainingLeaves: number;
 }
 
+interface DialogState {
+  dialogVisible: boolean;
+  dialogIcon: string;
+  dialogMessage: string;
+}
+
 const LeaveRequests: React.FC = () => {
   const useCtx = useContext(AuthContext);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [filteredLeaveRequests, setFilteredLeaveRequests] = useState<LeaveRequest[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState<string>('');
-  const [dialogIcon, setDialogIcon] = useState<string>('alert');
+  
+  const [dialogState, setDialogState] = useState<DialogState>({
+    dialogVisible: false,
+    dialogIcon: "",
+    dialogMessage: "",
+  });
+
 
   const [uniqueuserNames, setUniqueUserNames] = useState<LeaveRequest[]>([]);
   const [selectedUniqueUserName, setSelectedUniqueUserName] = useState<string>("");
@@ -130,7 +141,7 @@ const LeaveRequests: React.FC = () => {
         <View style={styles.row}>
           <View style={styles.employeeDetailsContainer}>
             <View>
-              <UserCircleIcon size={40}  color='grey'/>
+              <UserCircleIcon size={40} color='grey' />
             </View>
             <View>
               <Text style={styles.sectionText}>{item.userName}</Text>
@@ -181,9 +192,11 @@ const LeaveRequests: React.FC = () => {
   };
 
   const showDialog = (message: string, icon: string) => {
-    setDialogMessage(message);
-    setDialogVisible(true);
-    setDialogIcon(icon);
+    setDialogState({
+      dialogMessage: message,
+      dialogVisible: true,
+      dialogIcon: icon,
+    });
   };
 
   useEffect(() => {
@@ -233,149 +246,134 @@ const LeaveRequests: React.FC = () => {
         </View>
       )}
 
-      {/* Dialog for messages */}
-      <Portal >
-        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)} style={styles.dialog}>
-          <Dialog.Icon
-            icon={dialogIcon}
-            color={dialogIcon === "check-circle" ? "green" : dialogIcon === "alert" ? "red" : "gray"}
-            size={40}
-          />
-          <Dialog.Content style={{ marginTop: 30 }}>
-            <Text>{dialogMessage}</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)} labelStyle={{ color: COLORS.ACCENT_ORANGE }}>
-              Close
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      
+       {/* for dialog */}
+       <DialogComp dialogState={dialogState} setDialogState={setDialogState}/>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    screenContainer: {
-      backgroundColor: 'white',
-      flex: 1,
-      padding: 12,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    card: {
-      backgroundColor: 'white',
-      borderRadius: 8,
-      padding: 10,
-      marginHorizontal: 2,
-      marginVertical: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 3.5,
-      elevation: 4,
-    },
-    row: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
-    employeeDetailsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 10,
-      color: COLORS.ACCENT_ORANGE,
-    },
-    sectionTitle2: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: COLORS.ACCENT_ORANGE,
-    },
-    sectionText: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: 'gray',
-    },
-    divider: {
-      marginVertical: 8,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginTop: 8,
-    },
-    actionButton: {
-      flex: 1,
-      marginHorizontal: 4,
-    },
-    approveButton: {
-      backgroundColor: 'green',
-      borderRadius: 8,
-    },
-    rejectButton: {
-      backgroundColor: 'red',
-      borderRadius: 8,
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    emptyText: {
-      fontSize: 16,
-      color: 'gray',
-    },
-    listContainer: {
-      paddingBottom: 16,
-    },
-  
-  
-    // for dropdown
-    dropdownContainer: {
-  
-      paddingVertical: 10
-    },
-    dropdown: {
-      height: 50,
-      borderColor: 'gray',
-      borderWidth: 0.5,
-      borderRadius: 8,
-      paddingHorizontal: 8,
+  screenContainer: {
+    backgroundColor: 'white',
+    flex: 1,
+    padding: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 10,
+    marginHorizontal: 2,
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3.5,
+    elevation: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  employeeDetailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: COLORS.ACCENT_ORANGE,
+  },
+  sectionTitle2: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.ACCENT_ORANGE,
+  },
+  sectionText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'gray',
+  },
+  divider: {
+    marginVertical: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 8,
+  },
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  approveButton: {
+    backgroundColor: 'green',
+    borderRadius: 8,
+  },
+  rejectButton: {
+    backgroundColor: 'red',
+    borderRadius: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: 'gray',
+  },
+  listContainer: {
+    paddingBottom: 16,
+  },
+
+
+  // for dropdown
+  dropdownContainer: {
+
+    paddingVertical: 10
+  },
+  dropdown: {
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
     //   borderWidth: 1 / 6,
-  
-    },
-    selectedTextStyle: {
-      color: 'gray',
-      fontWeight: 300,
-    },
-    placeholderStyle: {
-      color: 'gray',
-      fontWeight: 300,
-    },
-    cardsContainer: {
-      height: '90%',
-    },
-  
-    statusBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 2,
-      borderRadius: 8,
-      alignSelf: 'flex-start',
-    },
-  
-    dialog: {
-      backgroundColor: 'white',
-      borderRadius: 8,
-    }
-  
-  });
+
+  },
+  selectedTextStyle: {
+    color: 'gray',
+    fontWeight: 300,
+  },
+  placeholderStyle: {
+    color: 'gray',
+    fontWeight: 300,
+  },
+  cardsContainer: {
+    height: '90%',
+  },
+
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+
+  dialog: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+  }
+
+});
 
 export default LeaveRequests;
