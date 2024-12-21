@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
-import { Button, Divider, Dialog, Portal, ActivityIndicator, Avatar } from 'react-native-paper';
+import { Button, Divider, ActivityIndicator } from 'react-native-paper';
 import { UserCircleIcon } from 'react-native-heroicons/solid';
 import { Dropdown } from "react-native-element-dropdown";
 import COLORS from '../constants/colors';
@@ -207,7 +207,7 @@ const LeaveRequests: React.FC = () => {
     <View style={styles.screenContainer}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator animating={true} size="large" color={COLORS.ACCENT_ORANGE} />
+          <ActivityIndicator animating={true} size="large" color={COLORS.DARK_GRAY} />
         </View>
       ) : filteredLeaveRequests.length > 0 && filteredLeaveRequests[0].LeaveId !== null ? (
         <View>

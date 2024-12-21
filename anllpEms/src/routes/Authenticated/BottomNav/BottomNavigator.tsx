@@ -9,6 +9,7 @@ import HomeScreen from '../../../screens/HomeScreen';
 import COLORS from '../../../constants/colors';
 import LeavesScreen from '../../../screens/LeaveScreen';
 import { RootStackParamList } from '../AuthenticatedRoutes';
+import Home from '../../../screens/Home';
 export type BottomTabParamList = {
     Home: undefined;
     Attendance: undefined;
@@ -93,7 +94,7 @@ const BottomNavigator = () => {
                 />
                 <Tab.Screen
                     name="Attendance"
-                    component={HomeScreen}
+                    component={Home}
                     options={{
                         tabBarIcon: ({ color, size }) => (
                             <UserIcon size={size} color={color} />
