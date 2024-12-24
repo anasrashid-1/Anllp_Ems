@@ -91,6 +91,125 @@ app.post("/login", async (req, res) => {
 });
 
 
+
+
+app.get('/attendance/status', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId;
+        console.log(userId)
+        if (!userId) {
+            return res.status(400).json({ message: "employeeid not found" });
+        }
+
+        const query = `select * from Attendance where userId = ? and attendanceDate = CAST(GETDATE() AS DATE)`;
+        const replacements = [userId];
+        const data = await connection.query(query, {
+            replacements,
+            type: connection.QueryTypes.SELECT,
+        });
+        
+        res.status(200).json({
+            isError: false,
+            message: "attendance status fetched successfully",
+            data,
+          });
+
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
+app.post('/attendance/checkin', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID not found" });
+        }
+
+        // Check if the user already checked in today
+        const existingCheckIn = await connection.query(
+            `SELECT * FROM Attendance WHERE userId = ? AND attendanceDate = CAST(GETDATE() AS DATE)`,
+            {
+                replacements: [userId],
+                type: connection.QueryTypes.SELECT,
+            }
+        );
+
+        if (existingCheckIn.length > 0) {
+            return res.status(400).json({ message: "User already checked in today" });
+        }
+
+        // Insert new check-in record
+        const query = `INSERT INTO Attendance (userId, checkInTime, attendanceDate) VALUES (?, GETDATE(), CAST(GETDATE() AS DATE))`;
+        await connection.query(query, {
+            replacements: [userId],
+            type: connection.QueryTypes.INSERT,
+        });
+
+        res.status(201).json({
+            isError: false,
+            message: "Check-in successful",
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+});
+
+
+
+app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID not found" });
+        }
+
+        // Check if there's an active check-in for today
+        const existingCheckIn = await connection.query(
+            `SELECT * FROM Attendance WHERE userId = ? AND attendanceDate = CAST(GETDATE() AS DATE) AND checkOutTime IS NULL`,
+            {
+                replacements: [userId],
+                type: connection.QueryTypes.SELECT,
+            }
+        );
+
+        if (existingCheckIn.length === 0) {
+            return res.status(400).json({ message: "No active check-in found for today" });
+        }
+
+        // Update the check-out time
+        const query = `UPDATE Attendance SET checkOutTime = GETDATE() WHERE userId = ? AND attendanceDate = CAST(GETDATE() AS DATE) AND checkOutTime IS NULL`;
+        await connection.query(query, {
+            replacements: [userId],
+            type: connection.QueryTypes.UPDATE,
+        });
+
+        res.status(200).json({
+            isError: false,
+            message: "Check-out successful",
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+});
+
+
+
+
 // app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
 //     try {
 //         const { userId } = req.params;
@@ -169,6 +288,7 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
 
 
         res.json({
+            isError: false,
             message: "Leaves fetched successfully",
             data
         });
@@ -184,15 +304,15 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
 app.patch('/leaveaction/:action?/:leaveId?', authMiddleware, async (req, res) => {
     try {
         const userId = req.userId;
-        const {action, leaveId} = req.params;
-        const {applicantUserId } = req.body;
+        const { action, leaveId } = req.params;
+        const { applicantUserId } = req.body;
 
         if (!leaveId || !applicantUserId || !action || !userId) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
         let query = `EXEC approveLeave @LeaveId = ?, @applicantUserId= ?,  @actionId = ?, @action = ?`
-        const result = await connection.query(query,{
+        const result = await connection.query(query, {
             replacements: [leaveId, applicantUserId, userId, action],
             type: connection.QueryTypes.EXECUTE,
         })
@@ -288,7 +408,7 @@ const adminNamespace = io.of('/admins');
 
 userNamespace.on('connection', (socket) => {
     console.log('User connected to /users', socket.id);
-    
+
     socket.on('send-location', (data) => {
         console.log("users sent : ", data)
         adminNamespace.emit('receive-location', { id: socket.id, ...data });
@@ -303,7 +423,7 @@ userNamespace.on('connection', (socket) => {
 
 adminNamespace.on('connection', (socket) => {
     console.log('Admin connected to /admins', socket.id);
-    
+
     socket.on('receive-location', (data) => {
         console.log('Admin received location:', data);
     });

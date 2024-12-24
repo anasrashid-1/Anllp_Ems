@@ -18,7 +18,8 @@ CREATE TABLE Attendance (
             ELSE 'Not Active' 
         END PERSISTED,
     sessionDuration AS DATEDIFF(MINUTE, checkInTime, checkOutTime) PERSISTED,
-    createdAt DATETIME DEFAULT GETDATE()
+    createdAt DATETIME DEFAULT GETDATE(),
+    attendanceDate DATE DEFAULT GETDATE()
 );
 
 
