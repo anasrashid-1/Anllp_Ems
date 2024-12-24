@@ -1,36 +1,57 @@
-import React, { useState } from 'react';
-import { View, Text, Button, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, Alert, StyleSheet } from 'react-native';
 import BackgroundService from 'react-native-background-actions';
+import Geolocation, { GeoPosition } from 'react-native-geolocation-service';
+import requestPermissions from '../util/requestPermissions';
+// import MapView, { Marker } from 'react-native-maps';
 
+
+type regionType = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
 const Home: React.FC = () => {
-  const [isServiceRunning, setIsServiceRunning] = useState(false);
+  const [isServiceRunning, setIsServiceRunning] = useState(false)
+  const [region, setRegion] = useState<regionType>({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
 
   // Sleep function for delays in background task
   const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(resolve, time));
 
   // The background task that runs in a loop
-  const veryIntensiveTask = async (taskDataArguments: any) => {
+  const getBackgroundLocation = async (taskDataArguments: any) => {
     const { delay } = taskDataArguments;
-    let i = 0;
 
     // Set the initial notification
     await BackgroundService.updateNotification({
       taskTitle: 'Background Task Running',
-      taskDesc: 'Starting loop...',
+      taskDesc: 'Starting Location Tracking',
       color: '#ff00ff',
       taskIcon: {
-        name: 'ic_launcher', // Make sure this icon exists in mipmap folder
+        name: 'ic_launcher',
         type: 'mipmap',
       },
     });
 
     while (BackgroundService.isRunning()) {
-      console.log(`Running count: ${i}`);
-      await BackgroundService.updateNotification({
-        taskDesc: `Count: ${i}`, // Update the task description in the notification
-      });
-      i++;
-      await sleep(delay); // Sleep for the specified delay (1 second)
+      Geolocation.getCurrentPosition(
+        (position) => {
+          console.log("getCurrentPosition called.")
+          console.log(position);
+        },
+        (error) => {
+          console.error(error);
+        },
+        { enableHighAccuracy: true, distanceFilter: 10 }
+      );
+
+      await sleep(delay);
     }
   };
 
@@ -40,22 +61,28 @@ const Home: React.FC = () => {
     taskTitle: 'Running Background Task',
     taskDesc: 'A background task running in an infinite loop.',
     taskIcon: {
-      name: 'ic_launcher', // Make sure this icon exists in mipmap folder
+      name: 'ic_launcher',
       type: 'mipmap',
     },
     color: '#ff00ff',
-    linkingURI: 'yourSchemeHere://chat/jane', // Example for deep linking
+    linkingURI: 'yourSchemeHere://chat/jane',
     parameters: {
-      delay: 1000, // Delay between iterations (1 second)
+      delay: 10000, // Adjust delay as necessary
     },
-    foreground: true, // Keep the task in the foreground
+    foreground: true,
   };
 
   // Start the background service
   const startTracking = async () => {
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) {
+      Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+      return;
+    }
+
     try {
       setIsServiceRunning(true);
-      await BackgroundService.start(veryIntensiveTask, options);
+      await BackgroundService.start(getBackgroundLocation, options);
       console.log('Background service started');
     } catch (error) {
       console.error('Error starting background service:', error);
@@ -75,6 +102,42 @@ const Home: React.FC = () => {
     }
   };
 
+
+  // useEffect(() => {
+  //   const getCurrentPosition = async () => {
+  //     const hasPermissions = await requestPermissions();
+  //     if (!hasPermissions) {
+  //       Alert.alert('Permission Denied', 'Location permission is required.');
+  //       return;
+  //     }
+
+  //     try {
+  //       Geolocation.getCurrentPosition(
+  //         (position) => {
+  //           setRegion((prevRegion) => ({
+  //             ...prevRegion,
+  //             latitude: position.coords.latitude,
+  //             longitude: position.coords.longitude,
+  //           }));
+  //         },
+  //         (error) => {
+  //           console.error(error);
+  //         },
+  //         { enableHighAccuracy: true, distanceFilter: 10 }
+  //       );
+  //     } catch (error) {
+  //       console.error(error);
+  //       Alert.alert('Error', 'Could not get current location.');
+  //     }
+  //   }
+
+
+  //   getCurrentPosition();
+  // }, []);
+
+
+
+
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ fontSize: 18, marginBottom: 20 }}>
@@ -84,19 +147,25 @@ const Home: React.FC = () => {
         title={isServiceRunning ? 'Stop service' : 'Start service'}
         onPress={isServiceRunning ? stopTracking : startTracking}
       />
+
+
+
+
+      <View style={styles.container} >
+      
+      </View>
     </View>
   );
 };
 
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+})
+
 export default Home;
-
-
-
-
-
-
-
-
-
-
-

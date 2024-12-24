@@ -94,7 +94,7 @@ const BottomNavigator = () => {
                 />
                 <Tab.Screen
                     name="Attendance"
-                    component={Home}
+                    component={HomeScreen}
                     options={{
                         tabBarIcon: ({ color, size }) => (
                             <UserIcon size={size} color={color} />
