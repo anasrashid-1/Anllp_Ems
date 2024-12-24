@@ -1,5 +1,6 @@
 const express = require("express");
 const connection = require("./config/connect.mssql");
+const moment = require('moment');
 
 const http = require('http');
 const socketio = require('socket.io');
@@ -206,6 +207,49 @@ app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
         });
     }
 });
+
+
+// Route to fetch user attendance
+app.get('/attendance/user', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID not found" });
+        }
+
+        const query = `
+            SELECT attendanceId, CAST(checkInTime as TIME) as checkInTime, CAST(checkOutTime as TIME) as checkOutTime, status, sessionDuration, attendanceDate
+            FROM Attendance 
+            WHERE userId = ?;
+        `;
+        const replacements = [userId];
+        const data = await connection.query(query, {
+            replacements,
+            type: connection.QueryTypes.SELECT,
+        });
+
+
+        const formattedData = data.map(record => ({
+            ...record,
+            checkInTime: moment(record.checkInTime).format('HH:mm:ss'),
+            checkOutTime: record.checkOutTime ? moment(record.checkOutTime).format('HH:mm:ss') : null,
+        }));
+
+        res.status(200).json({
+            isError: false,
+            message: "Attendance fetched successfully",
+            data: formattedData
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+});
+
 
 
 
