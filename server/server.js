@@ -108,12 +108,12 @@ app.get('/attendance/status', authMiddleware, async (req, res) => {
             replacements,
             type: connection.QueryTypes.SELECT,
         });
-        
+
         res.status(200).json({
             isError: false,
             message: "attendance status fetched successfully",
             data,
-          });
+        });
 
     } catch (error) {
         res.status(500).json({
@@ -207,6 +207,53 @@ app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
         });
     }
 });
+
+
+app.post('/attendance/locationlog', authMiddleware, async (req, res) => {
+    
+    try {
+        console.log(req.body)
+        const userId = req.userId;
+        const { attendanceId, lat, long } = req.body;
+        if (!userId || !attendanceId || !lat || !long) {
+            return res.status(400).json({ message: "All parameters are rewuired" });
+        }
+        // Check if there's an active check-in for today
+        const existingCheckIn = await connection.query(
+            `SELECT * FROM Attendance WHERE userId = ? AND attendanceDate = CAST(GETDATE() AS DATE) AND checkOutTime IS NULL AND attendanceId = ?`,
+            {
+                replacements: [userId, attendanceId],
+                type: connection.QueryTypes.SELECT,
+            }
+        );
+
+        if (existingCheckIn.length === 0) {
+            return res.status(400).json({ message: "No active check-in found for today" });
+        }
+
+        // Insert new check-in record
+        const query = `insert into locationLogs (attendanceId, latitude, longitude, loggedAt)
+                       values (? , ? , ? , GETDATE())`;
+        await connection.query(query, {
+            replacements: [attendanceId, lat, long],
+            type: connection.QueryTypes.INSERT,
+        });
+
+        res.status(201).json({
+            isError: false,
+            message: "location log updated successful",
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+});
+
+
+
 
 
 // Route to fetch user attendance
