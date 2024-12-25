@@ -20,8 +20,8 @@ export const AuthContext = createContext<AuthContextType>({
   userRole: '',
   userId: '',
   isAuthenticated: false,
-  authenticate: () => {},
-  logout: () => {},
+  authenticate: () => { },
+  logout: () => { },
 });
 
 interface AuthContextProviderProps {
@@ -56,7 +56,7 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
   }
 
   const value = {
-    apiUrl: 'http://192.168.29.194:8080',
+    apiUrl: 'https://468fsrq8-8080.inc1.devtunnels.ms',
     token: authToken,
     userName: userName,
     userRole: userRole,

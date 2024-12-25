@@ -30,7 +30,7 @@
       <!-- for react native maps -->
       <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyA6D3eZR5zvsbpO5Iv3EO7qziD0-_q6sK8"/>
+        android:value="AIzaSyAsevd0pHBDnmc0VzdOO-3gD-6NDDa6h8"/>
 
 
 
@@ -46,6 +46,10 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-      <service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="dataSync"/>
+      <!-- <service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="dataSync"/> -->
+      <service
+    android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask"
+    android:foregroundServiceType="location"
+    android:exported="true" />
     </application>
 </manifest>
