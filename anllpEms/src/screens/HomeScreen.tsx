@@ -61,7 +61,7 @@ const Home: React.FC = () => {
       await sleep(delay);
     }
   };
-
+  
   // Options for the background task
   const options = {
     taskName: 'Example Task1',

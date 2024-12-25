@@ -209,8 +209,9 @@ app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
 });
 
 
+
+
 app.post('/attendance/locationlog', authMiddleware, async (req, res) => {
-    
     try {
         console.log(req.body)
         const userId = req.userId;
@@ -402,7 +403,7 @@ app.patch('/leaveaction/:action?/:leaveId?', authMiddleware, async (req, res) =>
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        let query = `EXEC approveLeave @LeaveId = ?, @applicantUserId= ?,  @actionId = ?, @action = ?`
+        let query = `EXEC approveLeaveUpdated @LeaveId = ?, @applicantUserId= ?,  @actionId = ?, @action = ?`
         const result = await connection.query(query, {
             replacements: [leaveId, applicantUserId, userId, action],
             type: connection.QueryTypes.EXECUTE,
