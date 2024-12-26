@@ -10,16 +10,18 @@ CREATE TABLE users (
 CREATE TABLE Attendance (
     attendanceId INT PRIMARY KEY IDENTITY(1,1),
     userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),
-    checkInTime DATETIME NOT NULL,
+    checkInTime DATETIME NULL,
     checkOutTime DATETIME NULL,
     status AS 
         CASE 
-            WHEN checkOutTime IS NULL THEN 'Active' 
-            ELSE 'Not Active' 
-        END PERSISTED,
+			WHEN checkInTime IS NULL AND checkOutTime IS NULL THEN 'On Leave'
+			WHEN checkOutTime IS NULL THEN 'Active'
+			ELSE 'Not Active'
+		END PERSISTED,
     sessionDuration AS DATEDIFF(MINUTE, checkInTime, checkOutTime) PERSISTED,
     createdAt DATETIME DEFAULT GETDATE(),
-    attendanceDate DATE DEFAULT GETDATE()
+    attendanceDate DATE DEFAULT GETDATE(),
+    onLeave BIT DEFAULT 0
 );
 
 
@@ -115,6 +117,90 @@ BEGIN
 		COMMIT TRANSACTION;
 	END
 	ELSE
+    BEGIN
+        RAISERROR('Invalid action provided.', 16, 1);
+        RETURN;
+    END
+END;
+
+
+CREATE PROCEDURE approveLeaveUpdated
+    @LeaveId INT,
+    @actionId INT,
+    @applicantUserId INT,
+    @action VARCHAR(50)
+AS
+BEGIN
+    IF @action = 'Approved'
+    BEGIN
+        BEGIN TRANSACTION;
+            -- Approve the leave request
+            UPDATE LeaveRequests
+            SET Status = 'Approved', ApprovedBy = @actionId, ApprovedAt = GETDATE()
+            WHERE LeaveId = @LeaveId;
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RAISERROR('LeaveId does not exist.', 16, 1);
+                RETURN;
+            END
+
+            -- Update the leave balance
+            UPDATE LeaveBalance
+            SET UsedLeaves = UsedLeaves + 1
+            WHERE UserId = @applicantUserId;
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RAISERROR('UserId does not exist or no leave balance to update.', 16, 1);
+                RETURN;
+            END
+
+            -- Fetch leave period from LeaveRequests
+            DECLARE @StartDate DATE, @EndDate DATE;
+            SELECT @StartDate = StartDate, @EndDate = EndDate
+            FROM LeaveRequests
+            WHERE LeaveId = @LeaveId;
+
+            -- Insert leave entries into Attendance table ----->
+			BEGIN TRY
+				 WHILE @StartDate <= @EndDate
+				 BEGIN
+					INSERT INTO Attendance (userId, checkInTime, checkOutTime, attendanceDate, onLeave)
+					VALUES (@applicantUserId, NULL, NULL, @StartDate, 1);
+
+					SET @StartDate = DATEADD(DAY, 1, @StartDate);
+				 END	
+			END TRY
+			BEGIN CATCH
+				ROLLBACK TRANSACTION
+				RAISERROR('Error in inserting leave entries', 16, 1);
+                RETURN;
+
+			END CATCH
+			-- Insert leave entries into Attendance table  <----
+
+        COMMIT TRANSACTION;
+    END
+    ELSE IF @action = 'Rejected'
+    BEGIN
+        BEGIN TRANSACTION;
+            -- Reject the leave request
+            UPDATE LeaveRequests
+            SET Status = 'Rejected', RejectedBy = @actionId, RejectedAt = GETDATE()
+            WHERE LeaveId = @LeaveId;
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                ROLLBACK TRANSACTION;
+                RAISERROR('LeaveId does not exist.', 16, 1);
+                RETURN;
+            END
+        COMMIT TRANSACTION;
+    END
+    ELSE
     BEGIN
         RAISERROR('Invalid action provided.', 16, 1);
         RETURN;

@@ -130,18 +130,25 @@ const CalendarContainer = () => {
                     }
 
                     // Override with attendance data
-                    let color;
+                    let color : string;
                     data.forEach((record) => {
-                        if(record.sessionDuration < 360){
-                            color = 'orange'
-                        } else{
-                            color = 'blue'
+                        
+                        if (record.status === 'Not Active' && record.sessionDuration < 360) {
+                            color = 'orange';
+                        } else if (record.status === 'Not Active' && record.sessionDuration > 360) {
+                            color = 'blue';
+                        } else if (record.status === 'Active') {
+                            color = 'lightblue';
+                        } else if (record.status === 'On Leave') {
+                            color = 'green';
                         }
+                        
+
 
                         marks[record.attendanceDate] = {
                             customStyles: {
                                 container: {
-                                    backgroundColor: record.status === 'Not Active' ? color : 'pink',
+                                    backgroundColor: color,
                                     borderRadius: 8,
                                 },
                                 text: {
