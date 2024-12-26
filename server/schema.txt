@@ -147,8 +147,14 @@ BEGIN
             END
 
             -- Update the leave balance
-            UPDATE LeaveBalance
-            SET UsedLeaves = UsedLeaves + 1
+            --UPDATE LeaveBalance
+            --SET UsedLeaves = UsedLeaves + 1
+            --WHERE UserId = @applicantUserId;
+			DECLARE @DateDif INT;
+			SELECT @DateDif = DATEDIFF(DAY, StartDate, EndDate) + 1 from  LeaveRequests where LeaveId = @LeaveId;
+
+			UPDATE LeaveBalance
+            SET UsedLeaves = UsedLeaves + @DateDif
             WHERE UserId = @applicantUserId;
 
             IF @@ROWCOUNT = 0

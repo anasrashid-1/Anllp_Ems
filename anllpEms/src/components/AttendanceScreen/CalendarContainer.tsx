@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AuthContext } from '../../store/auth-context';
 import DialogComp from '../DialogComp';
 import { ActivityIndicator } from 'react-native-paper';
+import { useIsFocused } from '@react-navigation/native';
 
 interface AttendanceRecord {
     attendanceId: number;
@@ -23,6 +24,7 @@ interface DialogState {
 const CalendarContainer = () => {
     const currentDate = new Date();
     const initialDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-01`;
+    const isFocused = useIsFocused();
 
     const useCtx = useContext(AuthContext)
     const [loading, setLoading] = useState<boolean>(true);
@@ -172,7 +174,7 @@ const CalendarContainer = () => {
         }
 
         getAttendanceRecordData();
-    }, [])
+    }, [isFocused])
 
     return (
         <View>

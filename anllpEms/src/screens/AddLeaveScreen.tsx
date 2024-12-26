@@ -3,7 +3,6 @@ import { StyleSheet, View, TextInput, Text, TouchableOpacity } from "react-nativ
 import { Dropdown } from "react-native-element-dropdown";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {CalendarIcon} from 'react-native-heroicons/solid';
-import { Dialog, Portal, Button } from "react-native-paper";
 import COLORS from "../constants/colors";
 import { AuthContext } from "../store/auth-context";
 import DialogComp from "../components/DialogComp";

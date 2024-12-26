@@ -346,12 +346,10 @@ app.get('/attendance/user', authMiddleware, async (req, res) => {
 app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
-        console.log(userId);
-
         let query;
         let replacements = [];
         if (userId) {
-            query = `SELECT r.*, 
+            query = `SELECT r.LeaveId, r.UserId, r.LeaveType, CAST(r.StartDate AS DATE) AS StartDate, CAST(r.EndDate AS DATE) AS EndDate, r.Status, r.Reason, CAST(r.RequestedAt AS DATE) AS RequestedAt, r.ApprovedBy, CAST(r.ApprovedAt AS DATE) AS ApprovedAt, r.RejectedBy, CAST(r.RejectedAt AS DATE) as RejectedAt, 
                     b.year, 
                     b.totalLeaves, 
                     b.usedLeaves, 
@@ -361,7 +359,7 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
                     WHERE b.UserId = ? order by r.RequestedAt desc`
             replacements = [userId];
         } else {
-            query = `SELECT r.*, 
+            query = `SELECT r.LeaveId, r.UserId, r.LeaveType, CAST(r.StartDate AS DATE) AS StartDate, CAST(r.EndDate AS DATE) AS EndDate, r.Status, r.Reason, CAST(r.RequestedAt AS DATE) AS RequestedAt, r.ApprovedBy, CAST(r.ApprovedAt AS DATE) AS ApprovedAt, r.RejectedBy, CAST(r.RejectedAt AS DATE) as RejectedAt, 
                     b.year, 
                     b.totalLeaves, 
                     b.usedLeaves, 

@@ -20,6 +20,7 @@ interface LeaveRequest {
   userName: string;
   UserId: number;
   usedLeaves: number;
+  totalLeaves: number;
   remainingLeaves: number;
 }
 
@@ -97,9 +98,11 @@ const LeaveRequests: React.FC = () => {
 
     const ApprovedAt = new Date(item.ApprovedAt);
     const RejectedAt = new Date(item.RejectedAt);
-    const formattedStatusSate = item.Status === 'Approved' ? `${ApprovedAt.getDay()} ${ApprovedAt.toLocaleString('en-US', { month: 'short' })}` :
-      `${RejectedAt.getDay()} ${RejectedAt.toLocaleString('en-US', { month: 'short' })}`;
-
+    const formattedStatusSate = item.Status === 'Approved'
+    ? `${ApprovedAt.getDate()} ${ApprovedAt.toLocaleString('en-US', { month: 'short' })}`
+    : `${RejectedAt.getDate()} ${RejectedAt.toLocaleString('en-US', { month: 'short' })}`;
+  
+  
     const handleAction = async (LeaveId: number, applicantUserId: number, action: string) => {
       try {
         const response = await fetch(`${useCtx.apiUrl}/leaveaction/${action}/${LeaveId}`, {
@@ -151,7 +154,7 @@ const LeaveRequests: React.FC = () => {
           <View>
             <Text style={styles.sectionTitle2}>Days Left</Text>
             <Text style={styles.sectionText}>
-              {item.usedLeaves}/{item.remainingLeaves}
+              {item.usedLeaves}/{item.totalLeaves}
             </Text>
           </View>
         </View>

@@ -2,9 +2,10 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import COLORS from '../constants/colors';
 import { AuthContext, AuthContextType } from './../store/auth-context';
-import { Dialog, Portal, Button, ActivityIndicator } from "react-native-paper";
+import { ActivityIndicator } from "react-native-paper";
 import { useFocusEffect } from '@react-navigation/native';
 import RequestList from '../components/LeaveRequestScreen/RequestList';
+import DialogComp from '../components/DialogComp';
 
 // Define types for the leave data and balance
 interface LeaveData {
@@ -14,23 +15,33 @@ interface LeaveData {
   remainingLeaves: number | null;
 }
 
+interface DialogState {
+  dialogVisible: boolean;
+  dialogIcon: string;
+  dialogMessage: string;
+}
+
 
 
 const LeavesScreen: React.FC = () => {
   const useCtx = useContext<AuthContextType>(AuthContext);
   const [loading, setLoading] = useState<boolean>(true);
-  const [dialogVisible, setDialogVisible] = useState<boolean>(false);
-  const [dialogIcon, setDialogIcon] = useState<string>("");
-  const [dialogMessage, setDialogMessage] = useState<string>("");
+  const [dialogState, setDialogState] = useState<DialogState>({
+    dialogVisible: false,
+    dialogIcon: "",
+    dialogMessage: "",
+  });
   const [leaveData, setLeaveData] = useState<LeaveData[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveData | null>(null);
 
+  // Show dialog
   const showDialog = (message: string, icon: string) => {
-    setDialogMessage(message);
-    setDialogVisible(true);
-    setDialogIcon(icon);
+    setDialogState({
+      dialogMessage: message,
+      dialogVisible: true,
+      dialogIcon: icon,
+    });
   };
-
   useFocusEffect(
     useCallback(() => {
       const fetchLeaveData = async () => {
@@ -79,7 +90,7 @@ const LeavesScreen: React.FC = () => {
           <View style={styles.cardsContainer}>
             <View style={styles.card}>
               <Text style={styles.cardValueText}>
-                {leaveBalance && leaveBalance.totalLeaves!== null ? leaveBalance.totalLeaves : 'N/A'}
+                {leaveBalance && leaveBalance.totalLeaves !== null ? leaveBalance.totalLeaves : 'N/A'}
               </Text>
               <Text style={styles.cardDescText}>Total</Text>
               <Text style={styles.cardExtraText}>All allocated leaves</Text>
@@ -109,22 +120,8 @@ const LeavesScreen: React.FC = () => {
           )}
         </>
       )}
-
-      <Portal>
-        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
-          <Dialog.Icon
-            icon={dialogIcon}
-            color={dialogIcon === "check-circle" ? "green" : dialogIcon === "alert" ? "red" : "gray"}
-            size={40}
-          />
-          <Dialog.Content style={{ marginTop: 30 }}>
-            <Text>{dialogMessage}</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)} labelStyle={{ color: COLORS.ACCENT_ORANGE }}>OK</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      {/* for dialog */}
+      <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
     </View>
   );
 };
