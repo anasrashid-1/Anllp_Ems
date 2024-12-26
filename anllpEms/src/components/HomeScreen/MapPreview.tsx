@@ -59,7 +59,7 @@ export default function MapPreview() {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
                 L.marker([${location.latitude}, ${location.longitude}]).addTo(map)
-                    .bindPopup('You are here!')
+                    .bindPopup('Your location!')
                     .openPopup();
             </script>
         </body>
@@ -79,7 +79,7 @@ export default function MapPreview() {
 
 const styles = StyleSheet.create({
     container: {
-        height: '70%',
+        height: '50%',
         width: '100%',
     },
     webview: {

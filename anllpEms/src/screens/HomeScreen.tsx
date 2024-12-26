@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import Geolocation, { GeolocationError, GeolocationResponse } from '@react-native-community/geolocation';
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import BackgroundService, { BackgroundTaskOptions } from 'react-native-background-actions';
-import Geolocation, { GeolocationResponse, GeolocationError } from '@react-native-community/geolocation';
 import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
-import requestPermissions from '../util/requestPermissions';
 import { AuthContext } from '../store/auth-context';
+import requestPermissions from '../util/requestPermissions';
 
 export interface AttendanceStatus {
   attendanceId: string;
@@ -157,9 +157,9 @@ const Home: React.FC = () => {
       }
 
       setAttendanceStatus(null);
-
+      await fetchAttendanceStatus()
       await BackgroundService.stop();
-      console.log('Background tracking stopped');
+
     } catch (error) {
       console.error('Error stopping background tracking:', error);
     }
@@ -207,26 +207,14 @@ const Home: React.FC = () => {
   return (
     <View style={{ flex: 1 }}>
       <MapPreview />
-      <View style={styles.container}>
-        <MarkAttendance
-          handleCheckIn={handleCheckIn}
-          stopTracking={stopBackgroundTracking}
-          attendanceStatus={attendanceStatus}
-          loading={loading}
-        />
-      </View>
+      <MarkAttendance
+        handleCheckIn={handleCheckIn}
+        stopTracking={stopBackgroundTracking}
+        attendanceStatus={attendanceStatus}
+        loading={loading}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: 'absolute',
-    alignSelf: 'center',
-    bottom: 100,
-    width: '130%',
-  },
-});
 
 export default Home;

@@ -36,7 +36,7 @@ const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, 
     if (loading) {
         return (
             <View style={styles.container}>
-                <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
+                <ActivityIndicator size="large" color={COLORS.DARK_GRAY} />
             </View>
         );
     }
@@ -98,14 +98,16 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 8,
         backgroundColor: 'white',
-        width: '70%',
+        width: '100%',
         padding: 16,
+        paddingVertical: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.5,
         elevation: 5,
         alignSelf: 'center',
+        justifyContent: "center"
     },
     btnContainer: {
         flex: 1,
@@ -120,7 +122,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 6,
+        gap: 10,
+        paddingVertical: 4
     },
     button: {
         width: '95%',
