@@ -33,14 +33,14 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
     };
 
 
-  
+
 
     return (
         <View style={styles.container}>
             <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14, marginBottom: 4 }}>{today}</Text>
 
             <View style={styles.btnContainer}>
-         {  !attendancestatus?.checkOutTime &&    <View style={styles.textNdiconContainer}>
+                {!attendancestatus?.checkOutTime && <View style={styles.textNdiconContainer}>
                     <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 16 }}>
                         {attendancestatus?.status === "Active" ? "Let's get to home" : "Let's get to work"}
                     </Text>
@@ -50,24 +50,14 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
                         <ShoppingBagIcon size={30} color={COLORS.DARK_GRAY} />
                     )}
                 </View>
-}
+                }
                 {attendancestatus?.checkOutTime ? (
-                    <Text style={{ fontWeight: 'bold',    color: COLORS.ACCENT_ORANGE, fontSize: 16, marginVertical: 12 }}>
+                    <Text style={{ fontWeight: 'bold', color: COLORS.ACCENT_ORANGE, fontSize: 16, marginVertical: 12 }}>
                         Already done for today
                     </Text>
                 ) : (
                     <TouchableOpacity
                         disabled={isSubmitting || !!attendancestatus?.checkOutTime}
-                        style={[styles.button, (isSubmitting || attendancestatus?.checkOutTime) && { backgroundColor: 'gray' }]}
-                        onPress={startBackgroundLocation}
-                    >
-                        <Text style={styles.buttonText}>
-                          Check In
-                        </Text>
-                    </TouchableOpacity>
-                )}
-
-<TouchableOpacity
                         style={[styles.button, (isSubmitting || attendancestatus?.checkOutTime) && { backgroundColor: 'gray' }]}
                         onPress={handlePress}
                     >
@@ -75,6 +65,8 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
                             {attendancestatus?.status === "Active" ? "Check Out" : "Check In"}
                         </Text>
                     </TouchableOpacity>
+                )}
+
 
                 <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14 }}>
                     Your hours will be calculated here.

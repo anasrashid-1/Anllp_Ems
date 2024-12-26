@@ -1,30 +1,48 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import BackgroundService from 'react-native-background-actions';
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
 import requestPermissions from '../util/requestPermissions';
 import { AuthContext } from '../store/auth-context';
 
-
-type regionType = {
-  latitude: number;
-  longitude: number;
-  latitudeDelta: number;
-  longitudeDelta: number;
-}
 const Home: React.FC = () => {
-  const [isServiceRunning, setIsServiceRunning] = useState(false); 
   const [attendancestatus, setAttendanceStatus] = useState(null);
-  const [region, setRegion] = useState<regionType>({
-    latitude: 0,
-    longitude: 0,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  });
-
   const { apiUrl, token } = useContext(AuthContext);
+
+  // Post coordinates to the server
+  const postCoordinates = async (latitude: number, longitude: number) => {
+    if (!attendancestatus?.attendanceId) {
+      console.warn('Attendance ID is not available.');
+      return;
+    }
+
+    try {
+      const payload = {
+        attendanceId: attendancestatus.attendanceId,
+        lat: latitude,
+        long: longitude,
+      };
+
+      const response = await fetch(`${apiUrl}/attendance/locationlog`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        Alert.alert('Error', `Failed to log attendance: ${errorData.message}`);
+      } 
+    } catch (error) {
+      console.error('Attendance Logging Error:', error);
+      Alert.alert('Error', 'Failed to connect to the server. Please try again later.');
+    }
+  };
 
   // Sleep function for delays in background task
   const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(resolve, time));
@@ -32,7 +50,6 @@ const Home: React.FC = () => {
   // The background task that runs in a loop
   const getBackgroundLocation = async (taskDataArguments: any) => {
     const { delay } = taskDataArguments;
-
 
     // Set the initial notification
     await BackgroundService.updateNotification({
@@ -46,10 +63,11 @@ const Home: React.FC = () => {
     });
 
     while (BackgroundService.isRunning()) {
+      // Fetch the current location and post coordinates in background task
       Geolocation.getCurrentPosition(
-        (position) => {
-          console.log('getCurrentPosition called.');
-          console.log("position---->", position);
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          await postCoordinates(latitude, longitude);
         },
         (error) => {
           console.error(error);
@@ -60,25 +78,25 @@ const Home: React.FC = () => {
       await sleep(delay);
     }
   };
-  
+
   // Options for the background task
   const options = {
-    taskName: 'Example Task1',
+    taskName: 'LocationTracking',
     taskTitle: 'Running Background Task',
-    taskDesc: 'A background task running in an infinite loop.',
+    taskDesc: 'Tracking your location in the background.',
     taskIcon: {
       name: 'ic_launcher',
       type: 'mipmap',
     },
     color: '#ff00ff',
-    linkingURI: 'yourSchemeHere://chat/jane',
     parameters: {
-      delay: 1000,
+      // delay: 1800000, 
+      delay: 10000, 
     },
     foreground: true,
   };
 
-
+  // Get attendance status
   const getAttenceSatus = async () => {
     try {
       const res = await fetch(`${apiUrl}/attendance/status`, {
@@ -94,6 +112,15 @@ const Home: React.FC = () => {
       }
       const data = await res.json();
       setAttendanceStatus(data?.data[0]);
+      if (data?.data[0]?.status === "Active") {
+        try {
+          await BackgroundService.start(getBackgroundLocation, options);
+          console.log('Background service started');
+        } catch (error) {
+          console.error('Error starting background service:', error);
+          Alert.alert('Error', 'Could not start background service.');
+        }
+      }
     } catch (error) {
       console.error('Error during getAttenceSatus:', error);
     }
@@ -110,33 +137,27 @@ const Home: React.FC = () => {
       Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
       return;
     }
-    // try {
-    //   const res = await fetch(`${apiUrl}/attendance/checkin`, {
-    //     method: 'POST',
-    //     headers: {
-    //       Authorization: `Bearer ${token}`,
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({}),
-    //   });
 
-    //   if (!res.ok) {
-    //     throw new Error(`HTTP error! Status: ${res.status}`);
-    //   }
-    //   getAttenceSatus();
-    //   try {
-    setIsServiceRunning(true);
-    await BackgroundService.start(getBackgroundLocation, options);
-    //   console.log('Background service started');
-    // } catch (error) {
-    //   console.error('Error starting background service:', error);
-    //   Alert.alert('Error', 'Could not start background service.');
-    //   setIsServiceRunning(false);
-    // }
-    // } catch (error) {
-    //   console.error('Error during attendance check-in:', error);
-    // }
+    try {
+      const res = await fetch(`${apiUrl}/attendance/checkin`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
 
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      getAttenceSatus(); // Refresh attendance status after check-in
+
+
+    } catch (error) {
+      console.error('Error during attendance check-in:', error);
+    }
   };
 
   // Stop the background service
@@ -154,10 +175,11 @@ const Home: React.FC = () => {
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
+
       getAttenceSatus();
+
       try {
         await BackgroundService.stop();
-        setIsServiceRunning(false);
         console.log('Background service stopped');
       } catch (error) {
         console.error('Error stopping background service:', error);
@@ -165,20 +187,17 @@ const Home: React.FC = () => {
     } catch (error) {
       console.error('Error during attendance check-out:', error);
     }
-
   };
-
 
   return (
     <View style={{ flex: 1 }}>
       <MapPreview />
-      <View style={styles.container} >
+      <View style={styles.container}>
         <MarkAttendance startBackgroundLocation={startTracking} stopTracking={stopTracking} attendancestatus={attendancestatus} />
       </View>
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
