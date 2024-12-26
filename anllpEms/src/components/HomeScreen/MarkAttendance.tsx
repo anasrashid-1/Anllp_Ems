@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { FC } from 'react';
 import { StyleSheet, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
 import COLORS from '../../constants/colors';
 import { ShoppingBagIcon, HomeIcon } from 'react-native-heroicons/solid';
+import { AttendanceStatus } from '../../screens/HomeScreen';
 
-const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatus }) => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
+type MarkAttendanceProps = {
+    handleCheckIn: () => Promise<void>;
+    stopTracking: () => Promise<void>;
+    attendanceStatus: AttendanceStatus | null;
+    loading: boolean;
+};
+const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, attendanceStatus, loading }) => {
     const date = new Date();
     const day = date.toLocaleDateString('en-US', { weekday: 'long' });
     const month = date.toLocaleDateString('en-US', { month: 'long' });
@@ -14,21 +20,20 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
     const today = `${day}, ${dayOfMonth} ${month}`;
 
     const handlePress = async () => {
-        if (attendancestatus?.status === "Active") {
+        if (attendanceStatus?.status === 'Active') {
             await stopTracking();
         } else {
-            await startBackgroundLocation();
+            await handleCheckIn();
         }
     };
 
-    const formatSessionDuration = (minutes) => {
+    const formatSessionDuration = (minutes: number): string => {
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
         return `${hours} hr ${remainingMinutes} min`;
     };
 
-    if (!attendancestatus) {
-        // Show activity indicator when attendance status is not available
+    if (loading) {
         return (
             <View style={styles.container}>
                 <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
@@ -38,23 +43,19 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
 
     return (
         <View style={styles.container}>
-            <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14, marginBottom: 4 }}>{today}</Text>
+            <Text style={styles.dateText}>{today}</Text>
 
             <View style={styles.btnContainer}>
-                {/* If user is on leave, show the leave message */}
-                {attendancestatus?.onLeave ? (
-                    <Text style={{ fontWeight: 'bold', color: COLORS.DARK_GRAY, fontSize: 16, marginVertical: 12, }}>
-                        Enjoy your day off!
-                    </Text>
+                {attendanceStatus?.onLeave ? (
+                    <Text style={styles.leaveText}>Enjoy your day off!</Text>
                 ) : (
                     <>
-                        {/* Displaying status and button logic when not on leave */}
-                        {!attendancestatus?.checkOutTime && (
-                            <View style={styles.textNdiconContainer}>
-                                <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 16 }}>
-                                    {attendancestatus?.status === "Active" ? "Let's get to home" : "Let's get to work"}
+                        {!attendanceStatus?.checkOutTime && (
+                            <View style={styles.textAndIconContainer}>
+                                <Text style={styles.statusText}>
+                                    {attendanceStatus?.status === 'Active' ? "Let's get to home" : "Let's get to work"}
                                 </Text>
-                                {attendancestatus?.status === "Active" ? (
+                                {attendanceStatus?.status === 'Active' ? (
                                     <HomeIcon size={30} color={COLORS.DARK_GRAY} />
                                 ) : (
                                     <ShoppingBagIcon size={30} color={COLORS.DARK_GRAY} />
@@ -62,29 +63,25 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
                             </View>
                         )}
 
-                        {attendancestatus?.checkOutTime ? (
-                            <Text style={{ fontWeight: 'bold', color: COLORS.ACCENT_ORANGE, fontSize: 16, marginVertical: 12 }}>
-                                Already done for today
-                            </Text>
+                        {attendanceStatus?.checkOutTime ? (
+                            <Text style={styles.doneText}>Already done for today</Text>
                         ) : (
                             <TouchableOpacity
-                                disabled={isSubmitting || !!attendancestatus?.checkOutTime}
-                                style={[styles.button, (isSubmitting || attendancestatus?.checkOutTime) && { backgroundColor: 'gray' }]}
+                                disabled={!!attendanceStatus?.checkOutTime}
+                                style={[styles.button, attendanceStatus?.checkOutTime && styles.disabledButton]}
                                 onPress={handlePress}
                             >
                                 <Text style={styles.buttonText}>
-                                    {attendancestatus?.status === "Active" ? "Check Out" : "Check In"}
+                                    {attendanceStatus?.status === 'Active' ? 'Check Out' : 'Check In'}
                                 </Text>
                             </TouchableOpacity>
                         )}
 
-                        <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14 }}>
-                            Your hours will be calculated here.
-                        </Text>
+                        <Text style={styles.infoText}>Your hours will be calculated here.</Text>
 
-                        {attendancestatus?.checkOutTime && (
-                            <Text style={{ fontWeight: 'bold', color: COLORS.DARK_GRAY, fontSize: 14, marginTop: 8 }}>
-                                Session Duration: {formatSessionDuration(attendancestatus?.sessionDuration || 0)}
+                        {attendanceStatus?.checkOutTime && (
+                            <Text style={styles.sessionText}>
+                                Session Duration: {formatSessionDuration(attendanceStatus?.sessionDuration || 0)}
                             </Text>
                         )}
                     </>
@@ -103,12 +100,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         width: '70%',
         padding: 16,
-        // Shadow for iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.5,
-        // Shadow for Android
         elevation: 5,
         alignSelf: 'center',
     },
@@ -121,13 +116,12 @@ const styles = StyleSheet.create({
         borderTopColor: 'lightgrey',
         borderBottomColor: 'lightgrey',
     },
-    textNdiconContainer: {
+    textAndIconContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 6,
     },
-
     button: {
         width: '95%',
         height: 40,
@@ -137,9 +131,46 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginVertical: 12,
     },
+    disabledButton: {
+        backgroundColor: 'gray',
+    },
     buttonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    dateText: {
+        fontWeight: 'bold',
+        color: 'gray',
+        fontSize: 14,
+        marginBottom: 4,
+    },
+    leaveText: {
+        fontWeight: 'bold',
+        color: COLORS.DARK_GRAY,
+        fontSize: 16,
+        marginVertical: 12,
+    },
+    statusText: {
+        fontWeight: 'bold',
+        color: 'gray',
+        fontSize: 16,
+    },
+    doneText: {
+        fontWeight: 'bold',
+        color: COLORS.ACCENT_ORANGE,
+        fontSize: 16,
+        marginVertical: 12,
+    },
+    infoText: {
+        fontWeight: 'bold',
+        color: 'gray',
+        fontSize: 14,
+    },
+    sessionText: {
+        fontWeight: 'bold',
+        color: COLORS.DARK_GRAY,
+        fontSize: 14,
+        marginTop: 8,
     },
 });
