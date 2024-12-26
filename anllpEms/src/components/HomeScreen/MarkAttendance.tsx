@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
 import COLORS from '../../constants/colors';
 import { ShoppingBagIcon, HomeIcon } from 'react-native-heroicons/solid';
 
-
 const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatus }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
-
 
     const date = new Date();
     const day = date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -15,15 +13,12 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
 
     const today = `${day}, ${dayOfMonth} ${month}`;
 
-
     const handlePress = async () => {
-
         if (attendancestatus?.status === "Active") {
             await stopTracking();
         } else {
             await startBackgroundLocation();
         }
-
     };
 
     const formatSessionDuration = (minutes) => {
@@ -32,50 +27,67 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
         return `${hours} hr ${remainingMinutes} min`;
     };
 
-
-
+    if (!attendancestatus) {
+        // Show activity indicator when attendance status is not available
+        return (
+            <View style={styles.container}>
+                <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14, marginBottom: 4 }}>{today}</Text>
 
             <View style={styles.btnContainer}>
-                {!attendancestatus?.checkOutTime && <View style={styles.textNdiconContainer}>
-                    <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 16 }}>
-                        {attendancestatus?.status === "Active" ? "Let's get to home" : "Let's get to work"}
-                    </Text>
-                    {attendancestatus?.status === "Active" ? (
-                        <HomeIcon size={30} color={COLORS.DARK_GRAY} />
-                    ) : (
-                        <ShoppingBagIcon size={30} color={COLORS.DARK_GRAY} />
-                    )}
-                </View>
-                }
-                {attendancestatus?.checkOutTime ? (
-                    <Text style={{ fontWeight: 'bold', color: COLORS.ACCENT_ORANGE, fontSize: 16, marginVertical: 12 }}>
-                        Already done for today
+                {/* If user is on leave, show the leave message */}
+                {attendancestatus?.onLeave ? (
+                    <Text style={{ fontWeight: 'bold', color: COLORS.DARK_GRAY, fontSize: 16, marginVertical: 12, }}>
+                        Enjoy your day off!
                     </Text>
                 ) : (
-                    <TouchableOpacity
-                        disabled={isSubmitting || !!attendancestatus?.checkOutTime}
-                        style={[styles.button, (isSubmitting || attendancestatus?.checkOutTime) && { backgroundColor: 'gray' }]}
-                        onPress={handlePress}
-                    >
-                        <Text style={styles.buttonText}>
-                            {attendancestatus?.status === "Active" ? "Check Out" : "Check In"}
+                    <>
+                        {/* Displaying status and button logic when not on leave */}
+                        {!attendancestatus?.checkOutTime && (
+                            <View style={styles.textNdiconContainer}>
+                                <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 16 }}>
+                                    {attendancestatus?.status === "Active" ? "Let's get to home" : "Let's get to work"}
+                                </Text>
+                                {attendancestatus?.status === "Active" ? (
+                                    <HomeIcon size={30} color={COLORS.DARK_GRAY} />
+                                ) : (
+                                    <ShoppingBagIcon size={30} color={COLORS.DARK_GRAY} />
+                                )}
+                            </View>
+                        )}
+
+                        {attendancestatus?.checkOutTime ? (
+                            <Text style={{ fontWeight: 'bold', color: COLORS.ACCENT_ORANGE, fontSize: 16, marginVertical: 12 }}>
+                                Already done for today
+                            </Text>
+                        ) : (
+                            <TouchableOpacity
+                                disabled={isSubmitting || !!attendancestatus?.checkOutTime}
+                                style={[styles.button, (isSubmitting || attendancestatus?.checkOutTime) && { backgroundColor: 'gray' }]}
+                                onPress={handlePress}
+                            >
+                                <Text style={styles.buttonText}>
+                                    {attendancestatus?.status === "Active" ? "Check Out" : "Check In"}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14 }}>
+                            Your hours will be calculated here.
                         </Text>
-                    </TouchableOpacity>
-                )}
 
-
-                <Text style={{ fontWeight: 'bold', color: 'gray', fontSize: 14 }}>
-                    Your hours will be calculated here.
-                </Text>
-
-                {attendancestatus?.checkOutTime && (
-                    <Text style={{ fontWeight: 'bold', color: COLORS.DARK_GRAY, fontSize: 14, marginTop: 8 }}>
-                        Session Duration: {formatSessionDuration(attendancestatus?.sessionDuration || 0)}
-                    </Text>
+                        {attendancestatus?.checkOutTime && (
+                            <Text style={{ fontWeight: 'bold', color: COLORS.DARK_GRAY, fontSize: 14, marginTop: 8 }}>
+                                Session Duration: {formatSessionDuration(attendancestatus?.sessionDuration || 0)}
+                            </Text>
+                        )}
+                    </>
                 )}
             </View>
         </View>
@@ -83,7 +95,6 @@ const MarkAttendance = ({ startBackgroundLocation, stopTracking, attendancestatu
 };
 
 export default MarkAttendance;
-
 
 const styles = StyleSheet.create({
     container: {
