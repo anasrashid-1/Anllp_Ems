@@ -35,7 +35,7 @@ const requestPermissions = async (): Promise<boolean> => {
       return false;
     }
 
-    if (Platform.Version >= 33) {
+    if (Platform.Version >= 31) {
       const notificationPermissionGranted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
         {
