@@ -4,13 +4,13 @@ import COLORS from '../../constants/colors';
 import { ShoppingBagIcon, HomeIcon } from 'react-native-heroicons/solid';
 import { AttendanceStatus } from '../../screens/HomeScreen';
 
-
 type MarkAttendanceProps = {
     handleCheckIn: () => Promise<void>;
     stopTracking: () => Promise<void>;
     attendanceStatus: AttendanceStatus | null;
     loading: boolean;
 };
+
 const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, attendanceStatus, loading }) => {
     const date = new Date();
     const day = date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -45,30 +45,27 @@ const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, 
         <View style={styles.container}>
             <Text style={styles.dateText}>{today}</Text>
 
-            <View style={styles.btnContainer}>
+            <View style={styles.card}>
                 {attendanceStatus?.onLeave ? (
                     <Text style={styles.leaveText}>Enjoy your day off!</Text>
                 ) : (
                     <>
-                        {!attendanceStatus?.checkOutTime && (
-                            <View style={styles.textAndIconContainer}>
-                                <Text style={styles.statusText}>
-                                    {attendanceStatus?.status === 'Active' ? "Let's get to home" : "Let's get to work"}
-                                </Text>
-                                {attendanceStatus?.status === 'Active' ? (
-                                    <HomeIcon size={30} color={COLORS.DARK_GRAY} />
-                                ) : (
-                                    <ShoppingBagIcon size={30} color={COLORS.DARK_GRAY} />
-                                )}
-                            </View>
-                        )}
+                        <View style={styles.statusContainer}>
+                            <Text style={styles.statusText}>
+                                {attendanceStatus?.status === 'Active' ? "Let's get to home" : "Let's get to work"}
+                            </Text>
+                            {attendanceStatus?.status === 'Active' ? (
+                                <HomeIcon size={32} color={COLORS.ACCENT_ORANGE} />
+                            ) : (
+                                <ShoppingBagIcon size={32} color={COLORS.ACCENT_ORANGE} />
+                            )}
+                        </View>
 
                         {attendanceStatus?.checkOutTime ? (
-                            <Text style={styles.doneText}>Already done for today</Text>
+                            <Text style={styles.doneText}>You're done for today!</Text>
                         ) : (
                             <TouchableOpacity
-                                disabled={!!attendanceStatus?.checkOutTime}
-                                style={[styles.button, attendanceStatus?.checkOutTime && styles.disabledButton]}
+                                style={[styles.button, attendanceStatus?.status === 'Active' ? styles.activeButton : styles.inactiveButton]}
                                 onPress={handlePress}
                             >
                                 <Text style={styles.buttonText}>
@@ -77,12 +74,12 @@ const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, 
                             </TouchableOpacity>
                         )}
 
-                        <Text style={styles.infoText}>Your hours will be calculated here.</Text>
-
-                        {attendanceStatus?.checkOutTime && (
+                        {attendanceStatus?.checkOutTime ? (
                             <Text style={styles.sessionText}>
                                 Session Duration: {formatSessionDuration(attendanceStatus?.sessionDuration || 0)}
                             </Text>
+                        ) : (
+                            <Text style={styles.infoText}>Your working hours will be calculated here.</Text>
                         )}
                     </>
                 )}
@@ -96,84 +93,83 @@ export default MarkAttendance;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        borderRadius: 8,
-        backgroundColor: 'white',
-        width: '100%',
+        backgroundColor: '#F9FAFB',
         padding: 16,
-        paddingVertical: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.5,
-        elevation: 5,
-        alignSelf: 'center',
         justifyContent: "center"
     },
-    btnContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderTopWidth: 0.2,
-        borderBottomWidth: 0.2,
-        borderTopColor: 'lightgrey',
-        borderBottomColor: 'lightgrey',
-    },
-    textAndIconContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 4
-    },
-    button: {
-        width: '95%',
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: COLORS.ACCENT_ORANGE,
-        borderRadius: 4,
-        marginVertical: 12,
-    },
-    disabledButton: {
-        backgroundColor: 'gray',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
+    card: {
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
     },
     dateText: {
-        fontWeight: 'bold',
-        color: 'gray',
-        fontSize: 14,
-        marginBottom: 4,
+        fontWeight: '600',
+        fontSize: 16,
+        color: COLORS.DARK_GRAY,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    button: {
+        width: '100%',
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 16,
+    },
+    activeButton: {
+        backgroundColor: COLORS.PRIMARY_GREEN,
+    },
+    inactiveButton: {
+        backgroundColor: COLORS.ACCENT_ORANGE,
+    },
+    buttonText: {
+        fontWeight: '600',
+        fontSize: 16,
+        color: '#FFFFFF',
     },
     leaveText: {
-        fontWeight: 'bold',
-        color: COLORS.DARK_GRAY,
-        fontSize: 16,
-        marginVertical: 12,
+        fontWeight: '700',
+        fontSize: 18,
+        color: COLORS.PRIMARY_GREEN,
+        textAlign: 'center',
+        marginBottom: 16,
     },
     statusText: {
-        fontWeight: 'bold',
-        color: 'gray',
-        fontSize: 16,
+        fontWeight: '700',
+        fontSize: 18,
+        color: COLORS.MEDIUM_GRAY,
+        marginRight: 8,
     },
     doneText: {
-        fontWeight: 'bold',
-        color: COLORS.ACCENT_ORANGE,
+        fontWeight: '600',
         fontSize: 16,
-        marginVertical: 12,
+        color: COLORS.ACCENT_ORANGE,
+        textAlign: 'center',
+        marginBottom: 16,
     },
     infoText: {
-        fontWeight: 'bold',
-        color: 'gray',
         fontSize: 14,
+        color: COLORS.MEDIUM_GRAY,
+        textAlign: 'center',
+        marginTop: 8,
     },
     sessionText: {
-        fontWeight: 'bold',
-        color: COLORS.DARK_GRAY,
         fontSize: 14,
-        marginTop: 8,
+        fontWeight: '600',
+        color: COLORS.MEDIUM_GRAY,
+        textAlign: 'center',
+        marginTop: 16,
     },
 });

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1077751327452",
+    "project_id": "anllpems",
+    "storage_bucket": "anllpems.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077751327452:android:9788f62e17e5a063c16219",
+        "android_client_info": {
+          "package_name": "com.anllpems"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT3pLmWdhcai14l9kDI3ZrvLQ1ZXflnHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

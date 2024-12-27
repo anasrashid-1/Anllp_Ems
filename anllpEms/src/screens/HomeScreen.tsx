@@ -7,6 +7,9 @@ import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
 import { AuthContext } from '../store/auth-context';
 import requestPermissions from '../util/requestPermissions';
+import messaging from '@react-native-firebase/messaging';
+import notifee, { AndroidImportance } from '@notifee/react-native';
+
 
 export interface AttendanceStatus {
   attendanceId: string;
@@ -20,6 +23,43 @@ const Home: React.FC = () => {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const { apiUrl, token } = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
+
+
+
+  const displayNotification = async (title: string, body: string) => {
+    // Create a notification channel for Android
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+      importance: AndroidImportance.HIGH,
+    });
+
+    // Display the notification
+    await notifee.displayNotification({
+      title,
+      body,
+      android: {
+        channelId,
+        smallIcon: 'ic_launcher', // Use your app's launcher icon
+        pressAction: {
+          id: 'default',
+        },
+      },
+    });
+  };
+
+  const handleForegroundNotifications = () => {
+    messaging().onMessage(async (remoteMessage) => {
+      console.log('Foreground Notification:', remoteMessage);
+
+      const title = remoteMessage.notification?.title || 'New Notification';
+      const body = remoteMessage.notification?.body || 'You have a new message';
+
+      // Show notification using Notifee
+      await displayNotification(title, body);
+    });
+  };
+
 
   // Post coordinates to the server
   const logLocation = async (latitude: number, longitude: number): Promise<void> => {
@@ -97,10 +137,14 @@ const Home: React.FC = () => {
       type: 'mipmap',
     },
     color: '#ff00ff',
+    linkingURI: 'com.anllpems://chat/jane', // Updated scheme for deep linking
     parameters: {
-      delay: 10000, // 10 seconds
+      delay: 10000, // 10 seconds delay
     },
     foreground: true,
+    notification: {
+      openAppOnTap: true, // Ensure app opens when tapping on notification
+    },
   };
 
   // Fetch attendance status
@@ -200,9 +244,62 @@ const Home: React.FC = () => {
     }
   }, [attendanceStatus]);
 
+
+  const fetchMessagingToken = async (): Promise<void> => {
+    try {
+      const fcmtoken = await messaging().getToken();
+
+      await fetch(`${apiUrl}/user/token`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messagingToken: fcmtoken }),
+      });
+    } catch (error) {
+      console.error('Error fetching messaging token:', error);
+    }
+  };
+
+
+  const requestNotificationPermissions = async (): Promise<void> => {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      console.log('Notification permission granted.');
+      fetchMessagingToken();
+    } else {
+      console.log('Notification permission denied.');
+    }
+  };
+
   useEffect(() => {
     fetchAttendanceStatus();
+
+    requestNotificationPermissions();
+    handleForegroundNotifications()
+
+    // Optional: Handle token refresh
+    const unsubscribe = messaging().onTokenRefresh((fcmtoken) => {
+
+      fetch(`${apiUrl}/user/token`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messagingToken: fcmtoken }),
+      });
+    });
+
+    return unsubscribe;
   }, []);
+
+
 
   return (
     <View style={{ flex: 1 }}>
