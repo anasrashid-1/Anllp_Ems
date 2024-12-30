@@ -9,6 +9,7 @@ import { AuthContext } from '../store/auth-context';
 import requestPermissions from '../util/requestPermissions';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import { useIsFocused } from '@react-navigation/native';
 
 
 export interface AttendanceStatus {
@@ -16,6 +17,7 @@ export interface AttendanceStatus {
   status: 'Active' | 'Inactive';
   onLeave?: boolean;
   checkOutTime?: string;
+  checkInTime?: string;
   sessionDuration?: number;
 }
 
@@ -23,11 +25,38 @@ const Home: React.FC = () => {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const { apiUrl, token } = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
+  const [location, setLocation] = useState({ latitude: null, longitude: null });
+
+  const isFocused = useIsFocused()
+
+  useEffect(() => {
+    const requestPermissionAndFetchLocation = async () => {
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) {
+        Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ latitude, longitude });
+        },
+        (error) => {
+          console.error(error);
+        },
+        { enableHighAccuracy: true, distanceFilter: 10 }
+      );
+
+    };
+
+    requestPermissionAndFetchLocation();
+    fetchAttendanceStatus();
+  }, [isFocused]);
 
 
 
   const displayNotification = async (title: string, body: string) => {
-    // Create a notification channel for Android
     const channelId = await notifee.createChannel({
       id: 'default',
       name: 'Default Channel',
@@ -40,7 +69,7 @@ const Home: React.FC = () => {
       body,
       android: {
         channelId,
-        smallIcon: 'ic_launcher', // Use your app's launcher icon
+        smallIcon: 'ic_launcher',
         pressAction: {
           id: 'default',
         },
@@ -186,6 +215,10 @@ const Home: React.FC = () => {
 
   // Stop background location tracking
   const stopBackgroundTracking = async (): Promise<void> => {
+    if (!location.latitude) {
+      Alert.alert('Permission Denied', 'Not able to track your location.\nPlease tur on location to continue.');
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/attendance/checkout`, {
         method: 'PATCH',
@@ -201,7 +234,7 @@ const Home: React.FC = () => {
       }
 
       setAttendanceStatus(null);
-      await fetchAttendanceStatus()
+      await fetchAttendanceStatus();
       await BackgroundService.stop();
 
     } catch (error) {
@@ -214,6 +247,10 @@ const Home: React.FC = () => {
     const hasPermissions = await requestPermissions();
     if (!hasPermissions) {
       Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+      return;
+    }
+    if (!location.latitude) {
+      Alert.alert('Permission Denied', 'Not able to track your location.\nPlease tur on location to continue.');
       return;
     }
 
@@ -278,10 +315,8 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAttendanceStatus();
-
     requestNotificationPermissions();
-    handleForegroundNotifications()
+    handleForegroundNotifications();
 
     // Optional: Handle token refresh
     const unsubscribe = messaging().onTokenRefresh((fcmtoken) => {
@@ -303,7 +338,7 @@ const Home: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <MapPreview />
+      <MapPreview location={location} />
       <MarkAttendance
         handleCheckIn={handleCheckIn}
         stopTracking={stopBackgroundTracking}

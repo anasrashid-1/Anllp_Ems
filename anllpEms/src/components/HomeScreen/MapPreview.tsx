@@ -1,36 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import Geolocation from '@react-native-community/geolocation';
-import requestPermissions from '../../util/requestPermissions';
+import COLORS from '../../constants/colors';
 
-export default function MapPreview() {
-    const [location, setLocation] = useState({ latitude: 28.6139, longitude: 77.2090 });
+export default function MapPreview({ location }) {
 
-    // Request location permission and get current position
-    useEffect(() => {
-        const requestPermissionAndFetchLocation = async () => {
-            const hasPermissions = await requestPermissions();
-            if (!hasPermissions) {
-                Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
-                return;
-            }
-
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setLocation({ latitude, longitude });
-                },
-                (error) => {
-                    console.error(error);
-                },
-                { enableHighAccuracy: true, distanceFilter: 10 }
-            );
-
-        };
-
-        requestPermissionAndFetchLocation();
-    }, []);
+    if (!location?.latitude || !location?.longitude) {
+        return (
+            <View style={[styles.container, { height: "100%" , padding:12}]}>
+                <View style={styles.placeholder}>
+                    <Text style={styles.placeholderText}>
+                        🗺️ Location not found. 📍 Please turn on location service to continue.
+                    </Text>
+                </View>
+            </View>
+        );
+    }
 
     const mapHtml = `
         <!DOCTYPE html>
@@ -84,5 +69,15 @@ const styles = StyleSheet.create({
     },
     webview: {
         flex: 1,
+    },
+    placeholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    placeholderText: {
+        fontSize: 14,
+        color: COLORS.DARK_GRAY,
+        marginBottom: 8,
     },
 });

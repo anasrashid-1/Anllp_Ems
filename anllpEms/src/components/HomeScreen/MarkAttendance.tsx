@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Text, ActivityIndicator } from 'rea
 import COLORS from '../../constants/colors';
 import { ShoppingBagIcon, HomeIcon } from 'react-native-heroicons/solid';
 import { AttendanceStatus } from '../../screens/HomeScreen';
+import { formatTime } from '../../util/formatTime';
 
 type MarkAttendanceProps = {
     handleCheckIn: () => Promise<void>;
@@ -50,16 +51,19 @@ const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, 
                     <Text style={styles.leaveText}>Enjoy your day off!</Text>
                 ) : (
                     <>
-                        <View style={styles.statusContainer}>
-                            <Text style={styles.statusText}>
-                                {attendanceStatus?.status === 'Active' ? "Let's get to home" : "Let's get to work"}
-                            </Text>
-                            {attendanceStatus?.status === 'Active' ? (
-                                <HomeIcon size={32} color={COLORS.ACCENT_ORANGE} />
-                            ) : (
-                                <ShoppingBagIcon size={32} color={COLORS.ACCENT_ORANGE} />
-                            )}
-                        </View>
+                        {/* Show status and icon only if not checked out */}
+                        {!attendanceStatus?.checkOutTime && (
+                            <View style={styles.statusContainer}>
+                                <Text style={styles.statusText}>
+                                    {attendanceStatus?.status === 'Active' ? "Let's get to home" : "Let's get to work"}
+                                </Text>
+                                {attendanceStatus?.status === 'Active' ? (
+                                    <HomeIcon size={32} color={COLORS.ACCENT_ORANGE} />
+                                ) : (
+                                    <ShoppingBagIcon size={32} color={COLORS.ACCENT_ORANGE} />
+                                )}
+                            </View>
+                        )}
 
                         {attendanceStatus?.checkOutTime ? (
                             <Text style={styles.doneText}>You're done for today!</Text>
@@ -75,11 +79,18 @@ const MarkAttendance: FC<MarkAttendanceProps> = ({ handleCheckIn, stopTracking, 
                         )}
 
                         {attendanceStatus?.checkOutTime ? (
-                            <Text style={styles.sessionText}>
-                                Session Duration: {formatSessionDuration(attendanceStatus?.sessionDuration || 0)}
-                            </Text>
+                            <>
+                                <Text style={styles.sessionText}>
+                                    You Started at: {formatTime(attendanceStatus?.checkInTime)}, Ended at: {formatTime(attendanceStatus?.checkOutTime)}
+                                </Text>
+                                <Text style={styles.sessionText}>
+                                    Session Duration: {formatSessionDuration(attendanceStatus?.sessionDuration || 0)}
+                                </Text>
+                            </>
                         ) : (
-                            <Text style={styles.infoText}>Your working hours will be calculated here.</Text>
+                            <Text style={styles.infoText}>
+                                {!attendanceStatus?.checkInTime ? 'Please check in to continue' : `You have checked in at ${formatTime(attendanceStatus?.checkInTime)}`}
+                            </Text>
                         )}
                     </>
                 )}
@@ -95,7 +106,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F9FAFB',
         padding: 16,
-        justifyContent: "center"
+        justifyContent: 'center',
     },
     card: {
         borderRadius: 12,
@@ -123,13 +134,13 @@ const styles = StyleSheet.create({
     button: {
         width: '100%',
         height: 48,
-        borderRadius: 24,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 16,
     },
     activeButton: {
-        backgroundColor: COLORS.PRIMARY_GREEN,
+        backgroundColor: COLORS.ACCENT_ORANGE,
     },
     inactiveButton: {
         backgroundColor: COLORS.ACCENT_ORANGE,

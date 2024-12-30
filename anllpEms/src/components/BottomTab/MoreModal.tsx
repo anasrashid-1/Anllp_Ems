@@ -14,8 +14,8 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
       visible={isModalVisible}
       transparent={true}
       animationType="slide"
-      onRequestClose={toggleModal} 
-   
+      onRequestClose={toggleModal}
+
     >
       <Pressable style={styles.backdrop} onPress={toggleModal}>
         <View style={styles.modalContainer}>
@@ -25,9 +25,9 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
           <View style={styles.gridContainer}>
             {/* Row 1 */}
             <View style={styles.row}>
-              <Tab icon="UserGroupIcon" name="EOD Details"  route="Profile" toggleModal={toggleModal} />
-              <Tab icon="ChartBarIcon" name="Sales Lead"  route="Profile" toggleModal={toggleModal} />
-              <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal} />
+              <Tab icon="UserGroupIcon" name="EOD Details" route="Daily Expenses" toggleModal={toggleModal} />
+              <Tab icon="ChartBarIcon" name="Sales Lead" route="Profile" toggleModal={toggleModal} />
+              <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal}/>
             </View>
           </View>
         </View>
