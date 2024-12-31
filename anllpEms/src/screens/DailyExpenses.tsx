@@ -3,6 +3,7 @@ import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -11,6 +12,7 @@ import ListItem from '../components/DailyExpense/ListItem';
 import DialogComp from '../components/DialogComp';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
+import { Dropdown } from 'react-native-element-dropdown';
 
 interface Expense {
   expenseID: number;
@@ -22,6 +24,7 @@ interface Expense {
   createdAt: string;
   updatedAt: string | null;
   userId: number;
+  status: string; // Add a status field for the expense
 }
 
 interface DialogState {
@@ -32,7 +35,10 @@ interface DialogState {
 
 const DailyExpenses: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]); // State for filtered expenses
+  const [expensesInfo, setExpensesInfo] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>('All'); // Selected status for filter
   const authCtx = useContext(AuthContext);
   const [dialogState, setDialogState] = useState<DialogState>({
     dialogVisible: false,
@@ -48,6 +54,15 @@ const DailyExpenses: React.FC = () => {
     });
   };
 
+  const filterExpenses = (status: string) => {
+    if (status === 'All') {
+      setFilteredExpenses(expenses); // Show all expenses
+    } else {
+      const filtered = expenses.filter(expense => expense.status === status); // Filter by status
+      setFilteredExpenses(filtered);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       const fetchExpenses = async () => {
@@ -61,19 +76,18 @@ const DailyExpenses: React.FC = () => {
             },
           });
           const result = await response.json();
+          setExpensesInfo(result.amount);
 
           if (response.ok) {
             const data: Expense[] = result.data;
-
-            if (data.length > 0) {
-              setExpenses(data);
-            }
+            setExpenses(data);
+            setFilteredExpenses(data); // Initialize filtered expenses with all expenses
           } else {
-            console.error('Failed to fetch leave data', result.message);
+            console.error('Failed to fetch expenses data', result.message);
             showDialog(result.message, 'alert');
           }
         } catch (error: any) {
-          console.error('Error fetching leave data:', error);
+          console.error('Error fetching expenses data:', error);
           showDialog(error.message, 'alert');
         } finally {
           setLoading(false); // Stop loading
@@ -85,23 +99,96 @@ const DailyExpenses: React.FC = () => {
     }, [authCtx.userId, authCtx.token])
   );
 
+  const data = [
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Approved', value: 'Approved' },
+    { label: 'Rejected', value: 'Rejected' },
+    { label: 'All', value: 'All' },
+  ];
+
   return (
     <View style={styles.container}>
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
       ) : (
-        <FlatList
-          data={expenses}
-          keyExtractor={(item) => item.expenseID.toString()}
-          renderItem={({ item }) => <ListItem item={item} />}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No expenses found. Start adding some!</Text>
-          }
-        />
-      )}
+        <View style={{
+          flex: 1,
+        }}>
+          <ScrollView horizontal contentContainerStyle={{ height: 120 }}>
+            {/* Total Requested Amount */}
+            <View style={styles.card}>
+              <Text style={styles.cardValueText}>
+                {expensesInfo?.totalRequestedAmount ?? 'N/A'}
+              </Text>
+              <Text style={styles.cardDescText}>Total</Text>
+              <Text style={styles.cardExtraText}>All requested expenses</Text>
+            </View>
+
+            {/* Total Approved Amount */}
+            <View style={styles.card}>
+              <Text style={styles.cardValueText}>
+                {expensesInfo?.totalApprovedAmount ?? 'N/A'}
+              </Text>
+              <Text style={styles.cardDescText}>Approved</Text>
+              <Text style={styles.cardExtraText}>Expenses approved</Text>
+            </View>
+
+            {/* Total Rejected Amount */}
+            <View style={styles.card}>
+              <Text style={styles.cardValueText}>
+                {expensesInfo?.totalRejectedAmount ?? 'N/A'}
+              </Text>
+              <Text style={styles.cardDescText}>Rejected</Text>
+              <Text style={styles.cardExtraText}>Expenses rejected</Text>
+            </View>
+
+            {/* Total Pending Amount */}
+            <View style={styles.card}>
+              <Text style={styles.cardValueText}>
+                {expensesInfo?.totalPendingAmount ?? 'N/A'}
+              </Text>
+              <Text style={styles.cardDescText}>Pending</Text>
+              <Text style={styles.cardExtraText}>Expenses awaiting approval</Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.requestListHeaderContainer}>
+            <Text style={styles.requestListHeaderText}>Expense List</Text>
+
+            <View style={styles.dropdownContainer}>
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={data}
+                labelField="label"
+                valueField="value"
+                placeholder="Filter"
+                value={selectedStatus}
+                onChange={(item) => {
+                  setSelectedStatus(item.value);
+                  filterExpenses(item.value);
+                }}
+              />
+            </View>
+          </View>
+
+          <FlatList
+            data={filteredExpenses}
+            keyExtractor={(item) => item.expenseID.toString()}
+            renderItem={({ item }) => <ListItem item={item} />}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No expenses found. Start adding some!</Text>
+            }
+          />
+
+        </View>
+
+      )
+      }
       <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
-    </View>
+    </View >
   );
 };
 
@@ -121,5 +208,60 @@ const styles = StyleSheet.create({
     color: COLORS.DARK_GRAY,
     marginTop: 50,
     fontSize: 16,
+  },
+  requestListHeaderContainer: {
+    marginTop: 15,
+    paddingBottom: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  requestListHeaderText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'gray',
+  },
+  dropdownContainer: {
+    width: '40%',
+  },
+  dropdown: {
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
+  selectedTextStyle: {
+    color: 'gray',
+    fontWeight: 300,
+  },
+  placeholderStyle: {
+    color: 'gray',
+    fontWeight: 300,
+  },
+  card: {
+    width: 120,
+    height: 100,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    elevation: 5,
+    marginRight: 5,
+  },
+  cardValueText: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: 'gray',
+  },
+  cardDescText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.ACCENT_ORANGE,
+    marginTop: 16,
+  },
+  cardExtraText: {
+    fontSize: 10,
+    color: 'gray',
   },
 });

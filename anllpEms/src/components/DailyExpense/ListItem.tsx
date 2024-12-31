@@ -10,6 +10,7 @@ interface ListItemProps {
         expenseDate: string;
         expenseDescription: string;
         image: string;
+        status: string; // Adding status to the item
     };
 }
 
@@ -17,6 +18,19 @@ export default function ListItem({ item }: ListItemProps) {
     const [isModalVisible, setModalVisible] = useState(false);
 
     const toggleModal = () => setModalVisible(!isModalVisible);
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Pending':
+                return COLORS.ACCENT_ORANGE
+            case 'Approved':
+                return COLORS.LIGHT_GREEN
+            case 'Rejected':
+                return COLORS.PRIMARY_RED
+            default:
+                return COLORS.DARK_GRAY
+        }
+    };
 
     return (
         <>
@@ -31,6 +45,9 @@ export default function ListItem({ item }: ListItemProps) {
                             Date: {new Date(item.expenseDate).toLocaleDateString()}
                         </Text>
                         <Text style={styles.expenseAmount}>Amount: ₹{item.amount}</Text>
+                        <Text style={[styles.expenseStatus, { color: getStatusColor(item.status) }]}>
+                            Status: {item.status}
+                        </Text>
                     </View>
                 </View>
                 <Text style={[styles.expenseDescription, { color: COLORS.ACCENT_ORANGE }]}>
@@ -55,6 +72,8 @@ export default function ListItem({ item }: ListItemProps) {
         </>
     );
 }
+
+
 
 const styles = StyleSheet.create({
     cardContainer: {
@@ -97,6 +116,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: COLORS.ACCENT_ORANGE,
+    },
+    expenseStatus: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginTop: 4,
     },
     expenseDescription: {
         fontSize: 14,
