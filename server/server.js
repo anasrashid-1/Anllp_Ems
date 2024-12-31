@@ -1,9 +1,12 @@
 const express = require("express");
 const connection = require("./config/connect.mssql");
 const moment = require('moment');
+const path = require("path");
+
 
 const http = require('http');
 const socketio = require('socket.io');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -11,9 +14,16 @@ const io = socketio(server);
 
 
 app.use(express.json());
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 app.use(cors());
+
+
+const uploadMiddleware = require("./middlewares/multer.middleware");
+const addCoordinateMarks = require("./util/addCoordinateMarks")
+
 
 // middleware
 const authMiddleware = (req, res, next) => {
@@ -40,13 +50,17 @@ const authMiddleware = (req, res, next) => {
     });
 };
 
+const Jimp = require("jimp");
 
 
-app.get("/", (req, res) => {
-    res.json({
-        "message": "hi, there!"
-    })
-})
+app.get("/", async (req, res) => {
+        res.json({
+            isError: false,
+            message: "hello world!",
+        });
+});
+
+
 
 app.post("/login", async (req, res) => {
     try {
@@ -165,8 +179,6 @@ app.post('/attendance/checkin', authMiddleware, async (req, res) => {
     }
 });
 
-
-
 app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
     try {
         const userId = req.userId;
@@ -207,9 +219,6 @@ app.patch('/attendance/checkout', authMiddleware, async (req, res) => {
         });
     }
 });
-
-
-
 
 app.post('/attendance/locationlog', authMiddleware, async (req, res) => {
     try {
@@ -255,6 +264,127 @@ app.post('/attendance/locationlog', authMiddleware, async (req, res) => {
 
 
 
+app.post('/dailyexpenses', authMiddleware, uploadMiddleware.single("file"), async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { expenseCategory, expenseDescription, amount, expenseDate, latitude, longitude } = req.body;
+
+        if (!userId || !req.file || !expenseCategory || !expenseDescription || !expenseDate || !amount || !latitude || !longitude) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
+        const localFileName = req.file.filename;
+        const localFilePath = req.file.path;
+
+        addCoordinateMarks(localFilePath, latitude, longitude, res);
+
+        const query = `
+              INSERT INTO employeeDailyExpenses (UserId, expenseDate, expenseCategory,  expenseDescription , amount,  expenseImg, createdAt )
+              VALUES (?, GETDATE(), ?, ?, ?, ?, GETDATE())
+          `;
+        const result = await connection.query(query, {
+            replacements: [userId, expenseCategory, expenseDescription, amount, localFileName],
+            type: connection.QueryTypes.INSERT,
+        });
+
+        if (result[1] > 0) {
+            return res.json({ message: "Daily expense submitted successfully." });
+        } else {
+            return res.status(500).json({ message: "Daily expense submission failed." });
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
+app.get('/dailyexpenses/:userId?', authMiddleware, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        let query;
+        if (req.params) {
+            query = `select * from employeeDailyExpenses where userId = ${userId} order by createdAt desc`;
+        } else {
+            query = `select * from employeeDailyExpenses order by createdAt desc`;
+        }
+
+        const data = await connection.query(query, {
+            type: connection.QueryTypes.SELECT,
+        });
+
+        if (data.length > 0) {
+            data.forEach(item => {
+                if (item.expenseImg) {
+                    // item.image = `${req.protocol}://${req.get('host')}/images/${item.expenseImg}`;
+                    item.image = `https://468fsrq8-8080.inc1.devtunnels.ms/images/${item.expenseImg}`;  //tunnel url for testing
+                    delete item.expenseImg;
+                }
+            });
+        }
+
+        res.status(200).json({
+            isError: false,
+            message: "Daily expenses fetched successfully",
+            data,
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
+app.get('/data', async (req, res) => {
+    try {
+        const attendance = await connection.query('SELECT *  FROM locationLogs', {
+            type: connection.QueryTypes.DELETE,
+        });
+
+        const locationLogs = await connection.query('SELECT * FROM Attendance', {
+            type: connection.QueryTypes.SELECT,
+        });
+        res.status(201).json({
+            isError: false,
+            message: "Attendance & locationLogs fetched successfully.",
+            attendance,
+            locationLogs,
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+app.delete('/delete', async (req, res) => {
+    try {
+        await connection.query('DELETE FROM locationLogs', {
+            type: connection.QueryTypes.DELETE,
+        });
+
+        await connection.query('DELETE FROM Attendance', {
+            type: connection.QueryTypes.DELETE,
+        });
+
+        res.status(201).json({
+            isError: false,
+            message: "Attendance & locationLogs deleted successfully.",
+        });
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
 
 
 // Route to fetch user attendance
@@ -298,50 +428,6 @@ app.get('/attendance/user', authMiddleware, async (req, res) => {
     }
 });
 
-
-
-
-
-// app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
-//     try {
-//         const { userId } = req.params;
-//         console.log(userId);
-
-//         let query;
-//         let query2;
-//         let replacements = [];
-//         if (userId) {
-//             query = `select * from  LeaveRequests where userId = ? order by RequestedAt DESC`;
-//             query2 = `select * from leaveBalance where userId = ?`; 
-//             replacements = [userId];
-//         } else {
-//             query = `select * from  LeaveRequests order by RequestedAt DESC`;
-//             query2 = `select * from leaveBalance`;
-//         }
-
-//         const data = await connection.query(query, {
-//             replacements,
-//             type: connection.QueryTypes.SELECT,
-//         });
-//         const balance = await connection.query(query2, {
-//             replacements,
-//             type: connection.QueryTypes.SELECT,
-//         });
-
-
-//         res.json({
-//             message: "Leaves fetched successfully",
-//             data,
-//             balance
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             isError: true,
-//             message: "Internal server error",
-//             error: error.message,
-//         });
-//     }
-// });
 
 app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
     try {
@@ -391,6 +477,9 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
     }
 });
 
+
+
+//need to improve
 app.patch('/leaveaction/:action?/:leaveId?', authMiddleware, async (req, res) => {
     try {
         const userId = req.userId;

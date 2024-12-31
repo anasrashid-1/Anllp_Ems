@@ -212,3 +212,16 @@ BEGIN
         RETURN;
     END
 END;
+
+
+CREATE TABLE employeeDailyExpenses (
+    expenseID INT IDENTITY(1,1) PRIMARY KEY, 
+	userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),           
+    expenseDate DATE NOT NULL,              
+    expenseCategory NVARCHAR(100) NOT NULL, 
+    expenseDescription NVARCHAR(255),      
+    amount DECIMAL(10, 2) NOT NULL,
+	expenseImg varchar(100),
+    createdAt DATETIME DEFAULT GETDATE(),   
+    updatedAt DATETIME NULL                 
+);
