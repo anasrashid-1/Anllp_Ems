@@ -151,7 +151,6 @@ const BottomNavigator = () => {
             </Tab.Navigator>
 
             {/* Modal for "More" */}
-            {/* <MoreModal isModalVisible={isModalVisible} toggleModal={toggleModal} /> */}
             <MoreModal isModalVisible={isModalVisible} toggleModal={toggleModal} />
         </>
     )
