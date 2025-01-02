@@ -12,6 +12,8 @@ import BottomNavigator from './BottomNav/BottomNavigator';
 import AddDailyExpense from '../../screens/AddDailyExpense';
 import { useNavigation } from '@react-navigation/native';
 import DailyExpenseAdmin from '../../screens/DailyExpenseAdmin';
+import AttendanceAdmin from '../../screens/AttendanceAdmin';
+import EmployeeLocation from '../../screens/EmployeeLocation';
 
 
 export type RootStackParamList = {
@@ -41,6 +43,8 @@ const AuthenticatedRoutes = () => {
             <Stack.Screen name="Leave Requests" component={AllUsersLeaveRequests} />
             <Stack.Screen name="Add Daily Expense" component={AddDailyExpense} />
             <Stack.Screen name="Daily Expense Admin" component={DailyExpenseAdmin} />
+            <Stack.Screen name="Attendance Admin" component={AttendanceAdmin} />
+            <Stack.Screen name="EmployeeLocation" component={EmployeeLocation} />
             <Stack.Screen name="Daily Expenses" component={DailyExpenses} options={{
                 tabBarIcon: ({ color, size }) => (
                     <CalendarIcon size={size} color={color} />

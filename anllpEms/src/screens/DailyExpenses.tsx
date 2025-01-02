@@ -114,8 +114,9 @@ const DailyExpenses: React.FC = () => {
         <View style={{
           flex: 1,
         }}>
-          <ScrollView horizontal contentContainerStyle={{ height: 120 }}>
-            {/* Total Requested Amount */}
+
+
+          <View style={styles.cardsContainer}>
             <View style={styles.card}>
               <Text style={styles.cardValueText}>
                 {expensesInfo?.totalRequestedAmount ?? 'N/A'}
@@ -123,8 +124,6 @@ const DailyExpenses: React.FC = () => {
               <Text style={styles.cardDescText}>Total</Text>
               <Text style={styles.cardExtraText}>All requested expenses</Text>
             </View>
-
-            {/* Total Approved Amount */}
             <View style={styles.card}>
               <Text style={styles.cardValueText}>
                 {expensesInfo?.totalApprovedAmount ?? 'N/A'}
@@ -132,17 +131,6 @@ const DailyExpenses: React.FC = () => {
               <Text style={styles.cardDescText}>Approved</Text>
               <Text style={styles.cardExtraText}>Expenses approved</Text>
             </View>
-
-            {/* Total Rejected Amount */}
-            <View style={styles.card}>
-              <Text style={styles.cardValueText}>
-                {expensesInfo?.totalRejectedAmount ?? 'N/A'}
-              </Text>
-              <Text style={styles.cardDescText}>Rejected</Text>
-              <Text style={styles.cardExtraText}>Expenses rejected</Text>
-            </View>
-
-            {/* Total Pending Amount */}
             <View style={styles.card}>
               <Text style={styles.cardValueText}>
                 {expensesInfo?.totalPendingAmount ?? 'N/A'}
@@ -150,7 +138,7 @@ const DailyExpenses: React.FC = () => {
               <Text style={styles.cardDescText}>Pending</Text>
               <Text style={styles.cardExtraText}>Expenses awaiting approval</Text>
             </View>
-          </ScrollView>
+          </View>
 
           <View style={styles.requestListHeaderContainer}>
             <Text style={styles.requestListHeaderText}>Expense List</Text>
@@ -203,6 +191,11 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 20,
   },
+  cardsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
   emptyText: {
     textAlign: 'center',
     color: COLORS.DARK_GRAY,
@@ -211,6 +204,7 @@ const styles = StyleSheet.create({
   },
   requestListHeaderContainer: {
     marginTop: 15,
+    marginBottom: 10,
     paddingBottom: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -239,15 +233,15 @@ const styles = StyleSheet.create({
     fontWeight: 300,
   },
   card: {
-    width: 120,
-    height: 100,
+    width: '31%',
+    padding: 10,
     backgroundColor: 'white',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.5,
     elevation: 5,
-    marginRight: 5,
   },
   cardValueText: {
     fontSize: 26,

@@ -1,16 +1,15 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react'
-import getGreeting from '../../../util/greeting';
-import MoreModal from '../../../components/BottomTab/MoreModal';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Bars2Icon, BellIcon, CalendarIcon, HomeIcon, PlusIcon, UserIcon } from 'react-native-heroicons/solid';
-import HomeScreen from '../../../screens/HomeScreen';
+import MoreModal from '../../../components/BottomTab/MoreModal';
 import COLORS from '../../../constants/colors';
-import LeavesScreen from '../../../screens/LeaveScreen';
-import { RootStackParamList } from '../AuthenticatedRoutes';
-import Home from '../../../screens/Home';
 import AttendanceScreen from '../../../screens/AttendanceScreen';
+import HomeScreen from '../../../screens/HomeScreen';
+import LeavesScreen from '../../../screens/LeaveScreen';
+import getGreeting from '../../../util/greeting';
+import { RootStackParamList } from '../AuthenticatedRoutes';
 export type BottomTabParamList = {
     Home: undefined;
     Attendance: undefined;

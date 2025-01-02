@@ -29,6 +29,7 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
               <Tab icon="UserGroupIcon" name="Expenses Admin" route="Daily Expense Admin" toggleModal={toggleModal} />
               <Tab icon="ChartBarIcon" name="Sales Lead" route="Profile" toggleModal={toggleModal} />
               <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal} />
+              <Tab icon="ClipboardDocumentListIcon" name="Attendance Admin" route="Attendance Admin" toggleModal={toggleModal} />
             </View>
           </View>
         </View>
