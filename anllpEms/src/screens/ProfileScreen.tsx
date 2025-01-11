@@ -91,15 +91,17 @@ const ProfileScreen = () => {
 
         {/* Profile Information */}
         <View style={styles.profileInfo}>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>{name}</Text>
-          </View>
 
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>User ID:</Text>
             <Text style={styles.infoValue}>{userId}</Text>
           </View>
+
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Name:</Text>
+            <Text style={styles.infoValue}>{name}</Text>
+          </View>
+
 
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Role:</Text>
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    flexDirection: 'row', // Align image and text side by side
+    flexDirection: 'row',
     alignItems: 'center',
   },
   profileImage: {
@@ -228,13 +230,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.DARK_GRAY,
     fontWeight: '500',
-    width: 100,
   },
   infoValue: {
     fontSize: 14,
     color: COLORS.DARK_GRAY,
     fontWeight: '400',
-    flex: 1,
+    paddingLeft: 10
   },
   container: {
     flex: 1,

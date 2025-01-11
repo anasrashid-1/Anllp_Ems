@@ -23,33 +23,32 @@ export interface AttendanceStatus {
 
 const Home: React.FC = () => {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
-  const { apiUrl, token } = useContext(AuthContext);
+  const { apiUrl, token, userId } = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [location, setLocation] = useState({ latitude: null, longitude: null });
 
   const isFocused = useIsFocused()
+  const requestPermissionAndFetchLocation = async () => {
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) {
+      Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+      return;
+    }
+
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+      },
+      (error) => {
+        console.error(error);
+      },
+      { enableHighAccuracy: true, distanceFilter: 10 }
+    );
+
+  };
 
   useEffect(() => {
-    const requestPermissionAndFetchLocation = async () => {
-      const hasPermissions = await requestPermissions();
-      if (!hasPermissions) {
-        Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
-        return;
-      }
-
-      Geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({ latitude, longitude });
-        },
-        (error) => {
-          console.error(error);
-        },
-        { enableHighAccuracy: true, distanceFilter: 10 }
-      );
-
-    };
-
     requestPermissionAndFetchLocation();
     fetchAttendanceStatus();
   }, [isFocused]);
@@ -166,13 +165,13 @@ const Home: React.FC = () => {
       type: 'mipmap',
     },
     color: '#ff00ff',
-    linkingURI: 'com.anllpems://chat/jane', // Updated scheme for deep linking
+    linkingURI: 'com.anllpems://chat/jane',
     parameters: {
-      delay: 10000, // 10 seconds delay
+      delay: 10000,
     },
     foreground: true,
     notification: {
-      openAppOnTap: true, // Ensure app opens when tapping on notification
+      openAppOnTap: true,
     },
   };
 
@@ -180,7 +179,7 @@ const Home: React.FC = () => {
   const fetchAttendanceStatus = async (): Promise<void> => {
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/attendance/status`, {
+      const response = await fetch(`${apiUrl}/attendance/status/${userId}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -338,7 +337,7 @@ const Home: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <MapPreview location={location} />
+      <MapPreview location={location} requestPermissionAndFetchLocation={requestPermissionAndFetchLocation} />
       <MarkAttendance
         handleCheckIn={handleCheckIn}
         stopTracking={stopBackgroundTracking}

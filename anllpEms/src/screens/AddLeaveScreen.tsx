@@ -1,11 +1,11 @@
-import React, { useContext, useState } from "react";
-import { StyleSheet, View, TextInput, Text, TouchableOpacity } from "react-native";
-import { Dropdown } from "react-native-element-dropdown";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useContext, useState } from 'react';
+import { StyleSheet, View, TextInput, Text, TouchableOpacity } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {CalendarIcon} from 'react-native-heroicons/solid';
-import COLORS from "../constants/colors";
-import { AuthContext } from "../store/auth-context";
-import DialogComp from "../components/DialogComp";
+import COLORS from '../constants/colors';
+import { AuthContext } from '../store/auth-context';
+import DialogComp from '../components/DialogComp';
 
 interface FormData {
     subject: string;
@@ -22,12 +22,12 @@ interface DialogState {
 
 const AddLeaveScreen: React.FC = () => {
     const data = [
-        { label: "Sick Leave", value: "Sick Leave" },
-        { label: "Casual Leave", value: "Casual Leave" },
+        { label: 'Sick Leave', value: 'Sick Leave' },
+        { label: 'Casual Leave', value: 'Casual Leave' },
     ];
 
     const [formData, setFormData] = useState<FormData>({
-        subject: "",
+        subject: '',
         leaveType: null,
         startDate: new Date(),
         endDate: new Date(),
@@ -41,17 +41,17 @@ const AddLeaveScreen: React.FC = () => {
 
     const [dialogState, setDialogState] = useState<DialogState>({
         dialogVisible: false,
-        dialogIcon: "",
-        dialogMessage: "",
+        dialogIcon: '',
+        dialogMessage: '',
     });
 
     // Date picker handlers
-    const handleDateChange = (key: "startDate" | "endDate", selectedDate: Date | undefined) => {
+    const handleDateChange = (key: 'startDate' | 'endDate', selectedDate: Date | undefined) => {
         setFormData((prev) => ({
             ...prev,
             [key]: selectedDate || prev[key],
         }));
-        key === "startDate" ? setShowStartDate(false) : setShowEndDate(false);
+        key === 'startDate' ? setShowStartDate(false) : setShowEndDate(false);
     };
 
     // Show dialog
@@ -68,12 +68,12 @@ const AddLeaveScreen: React.FC = () => {
         const { subject, leaveType, startDate, endDate } = formData;
 
         if (!subject || !leaveType) {
-            showDialog("All fields are required.", "alert");
+            showDialog('All fields are required.', 'alert');
             return;
         }
 
         if (new Date(startDate) > new Date(endDate)) {
-            showDialog("End date must be after start date.", "alert");
+            showDialog('End date must be after start date.', 'alert');
             return;
         }
 
@@ -81,34 +81,34 @@ const AddLeaveScreen: React.FC = () => {
 
         try {
             const response = await fetch(`${authCtx.apiUrl}/leaveapplication`, {
-                method: "POST",
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                     Authorization: `Bearer ${authCtx.token}`,
                 },
                 body: JSON.stringify({
                     subject,
                     leaveType,
-                    startDate: startDate.toISOString().split("T")[0],
-                    endDate: endDate.toISOString().split("T")[0],
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0],
                 }),
             });
 
             const result = await response.json();
 
             if (response.ok) {
-                showDialog(result.message || "Leave application submitted successfully.", "check-circle");
+                showDialog(result.message || 'Leave application submitted successfully.', 'check-circle');
                 setFormData({
-                    subject: "",
+                    subject: '',
                     leaveType: null,
                     startDate: new Date(),
                     endDate: new Date(),
                 });
             } else {
-                showDialog(result.message || "Something went wrong.", "alert");
+                showDialog(result.message || 'Something went wrong.', 'alert');
             }
         } catch (error: any) {
-            showDialog(error.message || "Something went wrong", "alert");
+            showDialog(error.message || 'Something went wrong', 'alert');
         } finally {
             setIsSubmitting(false);
         }
@@ -164,7 +164,7 @@ const AddLeaveScreen: React.FC = () => {
                                 value={formData.startDate.toLocaleDateString()}
                                 editable={false}
                             />
-                        
+
                             <CalendarIcon size={20} color={COLORS.ACCENT_ORANGE} />
                         </TouchableOpacity>
                     </View>
@@ -187,10 +187,10 @@ const AddLeaveScreen: React.FC = () => {
 
                 <TouchableOpacity
                     disabled={isSubmitting}
-                    style={[styles.button, isSubmitting && { backgroundColor: "gray" }]}
+                    style={[styles.button, isSubmitting && { backgroundColor: 'gray' }]}
                     onPress={handleSubmit}
                 >
-                    <Text style={styles.buttonText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
+                    <Text style={styles.buttonText}>{isSubmitting ? 'Submitting...' : 'Submit'}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -199,16 +199,16 @@ const AddLeaveScreen: React.FC = () => {
                     value={formData.startDate}
                     mode="date"
                     display="default"
-                    onChange={(event, selectedDate) => handleDateChange("startDate", selectedDate)}
+                    onChange={(event, selectedDate) => handleDateChange('startDate', selectedDate)}
                 />
             )}
             {showEndDate && (
                 <DateTimePicker
                     value={formData.endDate}
                     mode="date"
-                    
+
                     display="default"
-                    onChange={(event, selectedDate) => handleDateChange("endDate", selectedDate)}
+                    onChange={(event, selectedDate) => handleDateChange('endDate', selectedDate)}
                 />
             )}
 
@@ -226,7 +226,7 @@ export default AddLeaveScreen;
 const styles = StyleSheet.create({
     screenContainer: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: 'white',
         padding: 12,
         paddingBottom: 0,
     },
@@ -237,11 +237,11 @@ const styles = StyleSheet.create({
         color: COLORS.DARK_GRAY,
         marginBottom: 8,
         fontSize: 16,
-        fontWeight: "bold",
+        fontWeight: 'bold',
     },
     inputWrapper: {
         borderRadius: 4,
-        borderColor: "gray",
+        borderColor: 'gray',
         borderWidth: 1,
     },
     dropdownContainer: {
@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.ACCENT_ORANGE,
         paddingVertical: 12,
         borderRadius: 4,
-        alignItems: "center",
+        alignItems: 'center',
     },
     buttonText: {
-        color: "white",
+        color: 'white',
         fontSize: 16,
-        fontWeight: "bold",
+        fontWeight: 'bold',
     },
 });

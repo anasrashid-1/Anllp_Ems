@@ -3,16 +3,15 @@ import React, { useCallback, useContext, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import AdminListItem from '../components/DailyExpense/AdminListItem';
 import DialogComp from '../components/DialogComp';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
-import AdminListItem from '../components/DailyExpense/AdminListItem';
-import { Dropdown } from 'react-native-element-dropdown';
 
 interface Expense {
     expenseID: number;
@@ -114,8 +113,7 @@ const DailyExpenseAdmin: React.FC = () => {
                 <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
             ) : (
                 <>
-                    {/* Expenses Info Cards */}
-                    <ScrollView horizontal contentContainerStyle={{ height: 150 }}>
+                    <View style={styles.cardsContainer}>
                         <View style={styles.card}>
                             <Text style={styles.cardValueText}>
                                 {expensesInfo?.totalRequestedAmount ?? 'N/A'}
@@ -132,19 +130,12 @@ const DailyExpenseAdmin: React.FC = () => {
                         </View>
                         <View style={styles.card}>
                             <Text style={styles.cardValueText}>
-                                {expensesInfo?.totalRejectedAmount ?? 'N/A'}
-                            </Text>
-                            <Text style={styles.cardDescText}>Rejected</Text>
-                            <Text style={styles.cardExtraText}>Expenses rejected</Text>
-                        </View>
-                        <View style={styles.card}>
-                            <Text style={styles.cardValueText}>
                                 {expensesInfo?.totalPendingAmount ?? 'N/A'}
                             </Text>
                             <Text style={styles.cardDescText}>Pending</Text>
                             <Text style={styles.cardExtraText}>Expenses awaiting approval</Text>
                         </View>
-                    </ScrollView>
+                    </View>
 
                     {/* User Filter Dropdown */}
                     <View style={styles.dropdownContainer}>
@@ -199,16 +190,21 @@ const styles = StyleSheet.create({
         marginTop: 50,
         fontSize: 16,
     },
+    cardsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+    },
     card: {
-        width: 120,
-        height: 100,
+        width: '31%',
+        padding: 10,
         backgroundColor: 'white',
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 16,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.5,
         elevation: 5,
-        marginRight: 5
     },
     cardValueText: {
         fontSize: 26,
@@ -226,7 +222,8 @@ const styles = StyleSheet.create({
         color: 'gray',
     },
     dropdownContainer: {
-        marginBottom: 10
+        marginTop: 10,
+        marginBottom: 5,
     },
     dropdown: {
         height: 50,
