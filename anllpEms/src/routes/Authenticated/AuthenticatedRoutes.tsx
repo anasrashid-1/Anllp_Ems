@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import DailyExpenseAdmin from '../../screens/DailyExpenseAdmin';
 import AttendanceAdmin from '../../screens/AttendanceAdmin';
 import EmployeeLocation from '../../screens/EmployeeLocation';
+import NotificationScreen from '../../screens/NotificationScreen';
 
 
 export type RootStackParamList = {
@@ -38,7 +39,7 @@ const AuthenticatedRoutes = () => {
                 options={{ headerShown: false }}
             />
             <Stack.Screen name="Profile" component={ProfileScreen} />
-            <Stack.Screen name="Notifications" component={HomeScreen} />
+            <Stack.Screen name="Notifications" component={NotificationScreen} />
             <Stack.Screen name="Leave Application" component={AddLeaveScreen} />
             <Stack.Screen name="Leave Requests" component={AllUsersLeaveRequests} />
             <Stack.Screen name="Add Daily Expense" component={AddDailyExpense} />

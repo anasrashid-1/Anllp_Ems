@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Bars2Icon, BellIcon, CalendarIcon, HomeIcon, PlusIcon, UserIcon } from 'react-native-heroicons/solid';
 import MoreModal from '../../../components/BottomTab/MoreModal';
@@ -10,6 +10,7 @@ import HomeScreen from '../../../screens/HomeScreen';
 import LeavesScreen from '../../../screens/LeaveScreen';
 import getGreeting from '../../../util/greeting';
 import { RootStackParamList } from '../AuthenticatedRoutes';
+import { AuthContext } from '../../../store/auth-context';
 export type BottomTabParamList = {
     Home: undefined;
     Attendance: undefined;
@@ -22,7 +23,8 @@ export type BottomTabParamList = {
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const BottomNavigator = () => {
-    const greeting = getGreeting("Ali");
+    const { userName } = useContext(AuthContext)
+    const greeting = getGreeting(userName);
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
     // Toggle modal visibility

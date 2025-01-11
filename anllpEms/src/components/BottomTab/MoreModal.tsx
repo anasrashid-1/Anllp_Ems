@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Modal, View, Pressable, StyleSheet, Text } from 'react-native';
 import COLORS from '../../constants/colors';
 import Tab from './MoreOptionTab/Tab';
+import { AuthContext } from '../../store/auth-context';
+import rbac from '../../util/roleBaseAccess';
 
 interface MoreModalProps {
   isModalVisible: boolean;
@@ -9,6 +11,7 @@ interface MoreModalProps {
 }
 
 const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) => {
+  const { userId } = useContext(AuthContext)
   return (
     <Modal
       visible={isModalVisible}
@@ -26,10 +29,10 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
             {/* Row 1 */}
             <View style={styles.row}>
               <Tab icon="UserGroupIcon" name="Daily Expenses" route="Daily Expenses" toggleModal={toggleModal} />
-              <Tab icon="UserGroupIcon" name="Expenses Admin" route="Daily Expense Admin" toggleModal={toggleModal} />
+              {rbac(userId) && <Tab icon="UserGroupIcon" name="Expenses Admin" route="Daily Expense Admin" toggleModal={toggleModal} />}
               <Tab icon="ChartBarIcon" name="Sales Lead" route="Profile" toggleModal={toggleModal} />
-              <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal} />
-              <Tab icon="ClipboardDocumentListIcon" name="Attendance Admin" route="Attendance Admin" toggleModal={toggleModal} />
+              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal} />}
+              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Attendance Admin" route="Attendance Admin" toggleModal={toggleModal} />}
             </View>
           </View>
         </View>
@@ -61,7 +64,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     width: '100%',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
     marginBottom: 12,
     flexWrap: "wrap"

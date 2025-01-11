@@ -78,12 +78,10 @@ const Home: React.FC = () => {
 
   const handleForegroundNotifications = () => {
     messaging().onMessage(async (remoteMessage) => {
-      console.log('Foreground Notification:', remoteMessage);
 
       const title = remoteMessage.notification?.title || 'New Notification';
       const body = remoteMessage.notification?.body || 'You have a new message';
 
-      // Show notification using Notifee
       await displayNotification(title, body);
     });
   };

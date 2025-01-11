@@ -1,22 +1,22 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { UserGroupIcon, HomeIcon, ChartBarIcon, ClipboardDocumentListIcon} from 'react-native-heroicons/solid';
+import { UserGroupIcon, HomeIcon, ChartBarIcon, ClipboardDocumentListIcon } from 'react-native-heroicons/solid';
 import { RootStackParamList } from '../../../routes/Authenticated/AuthenticatedRoutes';
 
 interface TabProps {
-  icon: 'UserGroupIcon' | 'ChartBarIcon' | 'ClipboardDocumentListIcon' | 'menu'; 
+  icon: 'UserGroupIcon' | 'ChartBarIcon' | 'ClipboardDocumentListIcon' | 'menu';
   name: string;
   route: keyof RootStackParamList;
   toggleModal: () => void;
 }
 
 const Tab: React.FC<TabProps> = ({ icon, name, route, toggleModal }) => {
-    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   // Choose default icon if no icon is passed
   const renderIcon = () => {
     if (!icon) {
-      return <HomeIcon size={26} color="gray" />; 
+      return <HomeIcon size={26} color="gray" />;
     }
     switch (icon) {
       case 'UserGroupIcon':
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 4,
+    marginTop: 5
   },
   optionText: {
     color: 'gray',
