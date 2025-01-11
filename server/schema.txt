@@ -222,6 +222,12 @@ CREATE TABLE employeeDailyExpenses (
     expenseDescription NVARCHAR(255),      
     amount DECIMAL(10, 2) NOT NULL,
 	expenseImg varchar(100),
-    createdAt DATETIME DEFAULT GETDATE(),   
-    updatedAt DATETIME NULL                 
+    createdAt DATETIME DEFAULT GETDATE(),
+	status NVARCHAR(50) DEFAULT 'Pending', -- Pending, Approved, Rejected
+    requestedAt DATETIME DEFAULT GETDATE(),
+    approvedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+    approvedAt DATETIME NULL,
+    rejectedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+    rejectedAt DATETIME NULL,
+	rejectionReason NVARCHAR(255) NULL,
 );

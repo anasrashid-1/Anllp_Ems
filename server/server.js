@@ -50,17 +50,12 @@ const authMiddleware = (req, res, next) => {
     });
 };
 
-const Jimp = require("jimp");
-
-
 app.get("/", async (req, res) => {
-        res.json({
-            isError: false,
-            message: "hello world!",
-        });
+    res.json({
+        isError: false,
+        message: "hello world!",
+    });
 });
-
-
 
 app.post("/login", async (req, res) => {
     try {
@@ -87,11 +82,13 @@ app.post("/login", async (req, res) => {
                 });
             } else {
                 res.json({
+                    isError: false,
                     message: "Wrong Password",
                 });
             }
         } else {
             res.json({
+                isError: false,
                 message: "Invalid employeeid, id not found in database",
             });
         }
@@ -106,18 +103,139 @@ app.post("/login", async (req, res) => {
 });
 
 
-
-
-app.get('/attendance/status', authMiddleware, async (req, res) => {
+app.patch('/changepassword', authMiddleware, async (req, res) => {
     try {
         const userId = req.userId;
-        console.log(userId)
-        if (!userId) {
-            return res.status(400).json({ message: "employeeid not found" });
+        const { oldPassword, newPassword } = req.body;
+        console.log(req.body)
+
+        if (!userId || !oldPassword || !newPassword) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+        const query1 = `select * from users where userId = ${userId}`;
+        const data = await connection.query(query1, {
+            type: connection.QueryTypes.SELECT,
+        });
+
+
+        if (data.length > 0) {
+            if (data[0].userId === userId && data[0].passwordHash === oldPassword) {
+                console.log("changing password")
+                const query2 = `update users set passwordHash = ? where userId = ?`;
+                await connection.query(query2, {
+                    replacements: [newPassword, userId],
+                    type: connection.QueryTypes.UPDATE,
+                });
+
+                res.status(200).json({
+                    isError: false,
+                    message: "Password changed successful",
+                });
+            } else {
+                res.json({
+                    isError: false,
+                    message: "Invalid user Id or Password.",
+                });
+            }
+        } else {
+            res.json({
+                isError: false,
+                message: "Invalid employeeid, id not found in database",
+            });
         }
 
-        const query = `select * from Attendance where userId = ? and attendanceDate = CAST(GETDATE() AS DATE)`;
-        const replacements = [userId];
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
+
+// app.get('/attendance/status/:userId?', authMiddleware, async (req, res) => {
+//     try {
+//         // const userId = req.userId;
+//         const { userId } = req.params;
+//         console.log(userId)
+
+//         let query;
+//         if (userId) {
+//             query = `select * from Attendance where userId = ? and attendanceDate = CAST(GETDATE() AS DATE)`;
+//         } else {
+//             query = `select * from Attendance where attendanceDate = CAST(GETDATE() AS DATE)`;
+//         }
+
+//         // const query = `select * from Attendance where userId = ? and attendanceDate = CAST(GETDATE() AS DATE)`;
+//         const replacements = [userId];
+//         const data = await connection.query(query, {
+//             replacements,
+//             type: connection.QueryTypes.SELECT,
+//         });
+
+//         res.status(200).json({
+//             isError: false,
+//             message: "attendance status fetched successfully",
+//             data,
+//         });
+
+//     } catch (error) {
+//         res.status(500).json({
+//             isError: true,
+//             message: "Internal server error",
+//             error: error.message,
+//         });
+//     }
+// })
+
+// attendance api
+app.get('/attendance/status/:userId?', authMiddleware, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { status, date } = req.query;
+        let query;
+        let replacements;
+        if(userId && status && date){
+            console.log(userId, status, date);
+            query = `select u.userId, u.username, 
+                     a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
+                     from users u
+                     inner join Attendance a on u.userId = a.userId and a.attendanceDate = CAST(? AS DATE)
+                     and a.status = ? where a.userId = ?`
+                     replacements = [date, status, userId];
+        }else if (!userId && status && date) {
+            query = `select u.userId, u.username, 
+                     a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
+                     from users u inner join Attendance a on u.userId = a.userId 
+                     and a.attendanceDate = CAST(? AS DATE) and a.status = ?`
+            replacements = [date, status];
+        } else if (!userId && !status && date) {
+            query = `select u.userId, u.username, 
+                     a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
+                     from users u left join Attendance a on u.userId = a.userId 
+                     and a.attendanceDate = CAST(? AS DATE)`
+            replacements = [date];
+        } else if (!userId && status && !date) {
+            query = `select u.userId, u.username, 
+                     a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
+                     from users u inner join Attendance a on u.userId = a.userId 
+                     and a.status = ?`
+            replacements = [status];
+        }
+        else if (!userId && !status && !date) {
+            query = `select u.userId, u.username, 
+                     a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
+                     from users u left join Attendance a on u.userId = a.userId 
+                     and a.attendanceDate = CAST(GETDATE() AS DATE)`
+            replacements = [];
+        } else if (userId && !status && !date) {
+            query = `select * from Attendance where userId = ? and attendanceDate = CAST(GETDATE() AS DATE)`;
+            replacements = [userId];
+        } else{
+            return res.status(400).json({ message: "Invalid fields!" });
+        }
+
         const data = await connection.query(query, {
             replacements,
             type: connection.QueryTypes.SELECT,
@@ -137,6 +255,39 @@ app.get('/attendance/status', authMiddleware, async (req, res) => {
         });
     }
 })
+
+app.get('/attendance/logs/:attendanceId?',authMiddleware, async (req, res) => {
+    try {
+        const attendanceId = req.params.attendanceId;
+        if(!attendanceId){
+            return res.status(400).json({ message: "Param is required" });
+        }
+        const query = `SELECT a.userID, u.username, l.*
+                        FROM Attendance a
+                        INNER JOIN locationLogs l ON a.attendanceId = l.attendanceId
+                        INNER JOIN users u ON a.userId = u.userId 
+                        where
+                        l.attendanceId = ?`;
+        const data = await connection.query(query, {
+            replacements: [attendanceId],
+            type: connection.QueryTypes.SELECT,
+        });
+
+        res.status(200).json({
+            isError: false,
+            message: "attendance logs fetched successfully",
+            data,
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
 
 app.post('/attendance/checkin', authMiddleware, async (req, res) => {
     try {
@@ -302,17 +453,83 @@ app.post('/dailyexpenses', authMiddleware, uploadMiddleware.single("file"), asyn
     }
 })
 
+app.patch('/dailyexpenses', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { expenseID, action, rejectionReason } = req.body;
+        console.log(req.body);
+        if (!userId || !expenseID || !action) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
+        let query1 = `select status from employeeDailyExpenses where expenseID = '${expenseID}'`
+        const data = await connection.query(query1, {
+            type: connection.QueryTypes.SELECT,
+        });
+        let query2;
+        let result;
+        if (data.length > 0 && data[0].status === "Pending" && action === "Approved") {
+            query2 = `update employeeDailyExpenses set approvedBy = ?, approvedAt = GETDATE(), status = ? where expenseId = ?;`
+            result = await connection.query(query2, {
+                replacements: [userId, action, expenseID],
+                type: connection.QueryTypes.EXECUTE,
+            })
+        } else if (data.length > 0 && data[0].status === "Pending" && action === "Rejected") {
+            if (!rejectionReason) return res.status(400).json({ message: "All fields are required...." });
+            query2 = `update employeeDailyExpenses set rejectedBy = ?, rejectedAt = GETDATE(), rejectionReason = ? , status = ? where expenseID = ?`
+            result = await connection.query(query2, {
+                replacements: [userId, rejectionReason, action, expenseID],
+                type: connection.QueryTypes.EXECUTE,
+            })
+        } else {
+            return res.status(400).json({ message: "Invalid action." });
+        }
+
+        if (result[1] > 0) {
+            return res.json({ message: "Daily Expense application updated successfully." });
+        } else {
+            return res.status(500).json({ message: "Daily Expense application updation failed." });
+        }
+
+
+    } catch (error) {
+        res.status(500).json({
+            isError: true,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+})
+
 app.get('/dailyexpenses/:userId?', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
         let query;
-        if (req.params) {
-            query = `select * from employeeDailyExpenses where userId = ${userId} order by createdAt desc`;
+        let query2;
+        if (userId) {
+            query = `select  u.userName , e.* from users u join employeeDailyExpenses e
+                     on u.userId = e.userId where e.userId = ${userId} order by e.createdAt desc`
+            query2 = `SELECT 
+                      SUM(amount) AS totalRequestedAmount,
+                      SUM(CASE WHEN status = 'Approved' THEN amount ELSE 0 END) AS totalApprovedAmount,
+                      SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END) AS totalPendingAmount,
+                      SUM(CASE WHEN status = 'Rejected' THEN amount ELSE 0 END) AS totalRejectedAmount
+                      FROM employeeDailyExpenses where userId = ${userId};`
         } else {
-            query = `select * from employeeDailyExpenses order by createdAt desc`;
+            query = `select  u.userName , e.* from users u join employeeDailyExpenses e
+                     on u.userId = e.userId order by e.createdAt desc`
+            query2 = `SELECT 
+                      SUM(amount) AS totalRequestedAmount,
+                      SUM(CASE WHEN status = 'Approved' THEN amount ELSE 0 END) AS totalApprovedAmount,
+                      SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END) AS totalPendingAmount,
+                      SUM(CASE WHEN status = 'Rejected' THEN amount ELSE 0 END) AS totalRejectedAmount
+                      FROM employeeDailyExpenses;`
         }
 
         const data = await connection.query(query, {
+            type: connection.QueryTypes.SELECT,
+        });
+        const amount = await connection.query(query2, {
             type: connection.QueryTypes.SELECT,
         });
 
@@ -330,6 +547,7 @@ app.get('/dailyexpenses/:userId?', authMiddleware, async (req, res) => {
             isError: false,
             message: "Daily expenses fetched successfully",
             data,
+            amount: amount[0]
         });
     } catch (error) {
         res.status(500).json({
@@ -386,7 +604,6 @@ app.delete('/delete', async (req, res) => {
     }
 })
 
-
 // Route to fetch user attendance
 app.get('/attendance/user', authMiddleware, async (req, res) => {
     try {
@@ -428,7 +645,6 @@ app.get('/attendance/user', authMiddleware, async (req, res) => {
     }
 });
 
-
 app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
@@ -462,7 +678,6 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
             type: connection.QueryTypes.SELECT,
         });
 
-
         res.json({
             isError: false,
             message: "Leaves fetched successfully",
@@ -476,8 +691,6 @@ app.get('/leaves/:userId?', authMiddleware, async (req, res) => {
         });
     }
 });
-
-
 
 //need to improve
 app.patch('/leaveaction/:action?/:leaveId?', authMiddleware, async (req, res) => {
@@ -511,7 +724,6 @@ app.patch('/leaveaction/:action?/:leaveId?', authMiddleware, async (req, res) =>
         });
     }
 })
-
 
 app.post('/leaveapplication', authMiddleware, async (req, res) => {
     try {
