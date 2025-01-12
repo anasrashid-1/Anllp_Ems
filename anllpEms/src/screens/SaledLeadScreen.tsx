@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Alert, ActivityIndicator, Button, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Alert, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
 import { Table, Row } from 'react-native-table-component';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
@@ -28,9 +28,10 @@ interface Pagination {
 const SalesLeadScreen: React.FC = () => {
     const [salesLeads, setSalesLeads] = useState<SalesLeadData[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false);
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
-        limit: 0,
+        limit: 15,
         totalCount: 0,
         totalPages: 0,
     });
@@ -39,9 +40,10 @@ const SalesLeadScreen: React.FC = () => {
     const authCtx = useContext(AuthContext);
 
     const fetchSalesLeads = async (page: number) => {
-        setIsLoading(true);
         try {
-            const response = await fetch(`${authCtx.apiUrl}/saleslead/?page=${page}`, {
+            if (page === 1) setIsLoading(true);
+            else setIsFetchingMore(true);
+            const response = await fetch(`${authCtx.apiUrl}/saleslead/?page=${page}&limit=${pagination.limit}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
@@ -55,32 +57,25 @@ const SalesLeadScreen: React.FC = () => {
             }
 
             const result = await response.json();
-            setSalesLeads(result.data);
+            if (page === 1) {
+                setSalesLeads(result.data);
+            } else {
+                setSalesLeads((prev) => [...prev, ...result.data]);
+            }
             setPagination(result.pagination);
         } catch (error: any) {
             Alert.alert(error.message || 'An error occurred while fetching sales leads.');
         } finally {
             setIsLoading(false);
+            setIsFetchingMore(false);
         }
     };
 
-    const isFocused = useIsFocused()
+    const isFocused = useIsFocused();
 
     useEffect(() => {
-        fetchSalesLeads(pagination.page);
-    }, [authCtx.apiUrl, authCtx.token, pagination.page, isFocused]);
-
-    const handleNextPage = () => {
-        if (pagination.page < pagination.totalPages) {
-            setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
-        }
-    };
-
-    const handlePreviousPage = () => {
-        if (pagination.page > 1) {
-            setPagination((prev) => ({ ...prev, page: prev.page - 1 }));
-        }
-    };
+        fetchSalesLeads(1);
+    }, [authCtx.apiUrl, authCtx.token, isFocused]);
 
     const tableHead = [
         'Firm Name',
@@ -105,6 +100,15 @@ const SalesLeadScreen: React.FC = () => {
         navigation.navigate('Add Sales Lead', { rowData });
     };
 
+    const handleLoadMore = () => {
+        if (pagination.page < pagination.totalPages && !isFetchingMore) {
+            fetchSalesLeads(pagination.page + 1);
+            setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
+        }
+    };
+
+    console.log('----->', tableData[0])
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Sales Leads</Text>
@@ -112,57 +116,65 @@ const SalesLeadScreen: React.FC = () => {
             {isLoading ? (
                 <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
             ) : (
-                <ScrollView>
-                    {tableData.length > 0 ? (
-                        <ScrollView horizontal>
-                            <View>
-                                <Table borderStyle={{ borderWidth: 2, borderColor: COLORS.DARK_GRAY, }}>
-                                    <Row data={tableHead} style={styles.header} textStyle={styles.headerText} />
+                <View style={styles.tableContainer}>
+                    <ScrollView horizontal>
+                        <View>
+                            {/* Sticky Header */}
+                            <View style={styles.stickyHeaderContainer}>
+                                <Table borderStyle={{ borderWidth: 2, borderColor: COLORS.DARK_GRAY }}>
+                                    <Row
+                                        data={tableHead}
+                                        style={styles.header}
+                                        textStyle={styles.headerText}
+                                        widthArr={Array(tableHead.length).fill(150)}
+                                    />
                                 </Table>
-                                {tableData.map((rowData, rowIndex) => (
-                                    <View key={rowIndex} style={styles.row}>
-                                        {rowData.map((value, cellIndex) => (
-                                            <View key={cellIndex} style={styles.cell}>
-                                                <Text style={styles.rowText}>{value ?? 'N/A'}</Text>
-                                            </View>
-                                        ))}
-                                        <View style={styles.cell}>
-                                            <TouchableOpacity
-                                                style={[styles.button, { backgroundColor: COLORS.ACCENT_ORANGE }]}
-                                                onPress={() => handleActionPress(salesLeads[rowIndex])}
-                                            >
-                                                <Text style={styles.buttonText}>Edit</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                ))}
                             </View>
-                        </ScrollView>
-                    ) : (
-                        <Text style={styles.placeholderText}>
-                            🚀 No sales data available yet. Please add some sales leads to get started.
-                        </Text>
-                    )}
-                </ScrollView>
-            )}
 
-            <View style={styles.paginationContainer}>
-                <Button
-                    title="Previous"
-                    onPress={handlePreviousPage}
-                    disabled={pagination.page === 1}
-                    color={COLORS.DARK_GRAY}
-                />
-                <Text style={styles.paginationText}>
-                    Page {pagination.page} of {pagination.totalPages}
-                </Text>
-                <Button
-                    title="Next"
-                    onPress={handleNextPage}
-                    color={COLORS.ACCENT_ORANGE}
-                    disabled={pagination.page === pagination.totalPages}
-                />
-            </View>
+                            {/* Scrollable Content */}
+                            <ScrollView
+                                style={styles.dataContainer}
+                                onScroll={({ nativeEvent }) => {
+                                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                                    const isBottom =
+                                        layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+                                    if (isBottom) {
+                                        handleLoadMore();
+                                    }
+                                }}
+                                scrollEventThrottle={16}
+                            >
+                                {tableData.length > 0 ? (
+                                    tableData.map((rowData, rowIndex) => (
+                                        <View key={rowIndex} style={styles.row}>
+                                            {rowData.map((value, cellIndex) => (
+                                                <View key={cellIndex} style={[styles.cell, { width: 150 }]}>
+                                                    <Text style={styles.rowText}>{value ?? 'N/A'}</Text>
+                                                </View>
+                                            ))}
+                                            <View style={[styles.cell, { width: 150 }]}>
+                                                <TouchableOpacity
+                                                    style={[styles.button, { backgroundColor: COLORS.ACCENT_ORANGE }]}
+                                                    onPress={() => handleActionPress(salesLeads[rowIndex])}
+                                                >
+                                                    <Text style={styles.buttonText}>Edit</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text style={styles.placeholderText}>
+                                        🚀 No sales data available yet. Please add some sales leads to get started.
+                                    </Text>
+                                )}
+                                {isFetchingMore && (
+                                    <ActivityIndicator size="small" color={COLORS.ACCENT_ORANGE} />
+                                )}
+                            </ScrollView>
+                        </View>
+                    </ScrollView>
+                </View>
+            )}
         </View>
     );
 };
@@ -174,6 +186,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
         padding: 16,
+    },
+    tableContainer: {
+        flex: 1,
+    },
+    stickyHeaderContainer: {
+        zIndex: 1,
+        backgroundColor: 'white',
+    },
+    dataContainer: {
+        flex: 1,
     },
     placeholderText: {
         fontSize: 14,
@@ -202,34 +224,29 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     cell: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 10,
+        paddingVertical: 5,
         borderRightWidth: 1,
         borderLeftWidth: 1,
         borderColor: COLORS.DARK_GRAY,
     },
     header: {
-        height: 40, backgroundColor: COLORS.ACCENT_ORANGE,
+        height: 40,
+        backgroundColor: COLORS.ACCENT_ORANGE,
     },
-    headerText: { padding: 6, width: 150 },
+    headerText: {
+        padding: 6,
+        width: 150,
+        textAlign: 'center',
+        color: 'white',
+        fontWeight: 'bold'
+    },
     rowText: {
         textAlign: 'center',
         fontSize: 12,
         color: COLORS.DARK_GRAY,
         paddingVertical: 6,
         width: 100,
-    },
-
-    paginationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 16,
-    },
-    paginationText: {
-        fontSize: 14,
-        color: COLORS.DARK_GRAY,
     },
 });
