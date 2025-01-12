@@ -17,6 +17,7 @@ import EmployeeLocation from '../../screens/EmployeeLocation';
 import NotificationScreen from '../../screens/NotificationScreen';
 import SaledLeadScreen from '../../screens/SaledLeadScreen';
 import AddSalesLead from '../../screens/AddSalesLead';
+import Growerdetails from '../../screens/Growerdetails';
 
 
 export type RootStackParamList = {
@@ -49,6 +50,7 @@ const AuthenticatedRoutes = () => {
             <Stack.Screen name="Daily Expense Admin" component={DailyExpenseAdmin} />
             <Stack.Screen name="Attendance Admin" component={AttendanceAdmin} />
             <Stack.Screen name="EmployeeLocation" component={EmployeeLocation} />
+            <Stack.Screen name="Growerdetails" component={Growerdetails} />
             <Stack.Screen name="Sales Lead" component={SaledLeadScreen} options={{
                 tabBarIcon: ({ color, size }) => (
                     <CalendarIcon size={size} color={color} />
