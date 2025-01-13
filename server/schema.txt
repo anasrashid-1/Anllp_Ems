@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE appUsers (
     userId INT PRIMARY KEY IDENTITY(1,1),
     userName NVARCHAR(100) NOT NULL,
     email NVARCHAR(100) UNIQUE NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE users (
 
 CREATE TABLE Attendance (
     attendanceId INT PRIMARY KEY IDENTITY(1,1),
-    userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),
+    userId INT NOT NULL FOREIGN KEY REFERENCES appUsers(userId),
     checkInTime DATETIME NULL,
     checkOutTime DATETIME NULL,
     status AS 
@@ -35,7 +35,7 @@ CREATE TABLE locationLogs (
 
 CREATE TABLE leaveBalance (
     balanceId INT PRIMARY KEY IDENTITY(1,1),
-    userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),
+    userId INT NOT NULL FOREIGN KEY REFERENCES appUsers(userId),
     year INT NOT NULL, -- The calendar year for the leave balance
     totalLeaves INT DEFAULT 12, -- Default annual allotment
     usedLeaves INT DEFAULT 0, -- Leaves already used
@@ -45,22 +45,22 @@ CREATE TABLE leaveBalance (
 
     CREATE TABLE LeaveRequests (
         LeaveId INT PRIMARY KEY IDENTITY(1,1),
-        UserId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
+        UserId INT NOT NULL FOREIGN KEY REFERENCES appUsers(UserId),
         LeaveType NVARCHAR(50) NOT NULL, -- e.g., Sick Leave, Casual Leave
         StartDate DATE NOT NULL,
         EndDate DATE NOT NULL,
         Status NVARCHAR(50) DEFAULT 'Pending', -- Pending, Approved, Rejected
         Reason NVARCHAR(255) NULL,
         RequestedAt DATETIME DEFAULT GETDATE(),
-        ApprovedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+        ApprovedBy INT NULL FOREIGN KEY REFERENCES appUsers(UserId),
         ApprovedAt DATETIME NULL,
-        RejectedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+        RejectedBy INT NULL FOREIGN KEY REFERENCES appUsers(UserId),
         RejectedAt DATETIME NULL,
         CONSTRAINT CHECK_EndDate CHECK (EndDate >= StartDate)
     );
 
 Create TRIGGER createLeaveBalance
-ON users
+ON appUsers
 AFTER INSERT
 AS
 BEGIN
@@ -216,7 +216,7 @@ END;
 
 CREATE TABLE employeeDailyExpenses (
     expenseID INT IDENTITY(1,1) PRIMARY KEY, 
-	userId INT NOT NULL FOREIGN KEY REFERENCES users(userId),           
+	userId INT NOT NULL FOREIGN KEY REFERENCES appUsers(userId),           
     expenseDate DATE NOT NULL,              
     expenseCategory NVARCHAR(100) NOT NULL, 
     expenseDescription NVARCHAR(255),      
@@ -225,9 +225,9 @@ CREATE TABLE employeeDailyExpenses (
     createdAt DATETIME DEFAULT GETDATE(),
 	status NVARCHAR(50) DEFAULT 'Pending', -- Pending, Approved, Rejected
     requestedAt DATETIME DEFAULT GETDATE(),
-    approvedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+    approvedBy INT NULL FOREIGN KEY REFERENCES appUsers(UserId),
     approvedAt DATETIME NULL,
-    rejectedBy INT NULL FOREIGN KEY REFERENCES Users(UserId),
+    rejectedBy INT NULL FOREIGN KEY REFERENCES appUsers(UserId),
     rejectedAt DATETIME NULL,
 	rejectionReason NVARCHAR(255) NULL,
 );
