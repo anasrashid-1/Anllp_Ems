@@ -132,7 +132,7 @@ const AddExpenseScreen: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`${authCtx.apiUrl}/dailyexpenses`, {
+            const response = await fetch(`${authCtx.apiUrl}/dailyexpenses/add`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${authCtx.token}`,

@@ -5,7 +5,7 @@ import {
     FlatList,
     StyleSheet,
     Text,
-    View
+    View,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import AdminListItem from '../components/DailyExpense/AdminListItem';
@@ -23,6 +23,13 @@ interface Expense {
     createdAt: string;
     updatedAt: string | null;
     userId: number;
+    userName: string;
+    status: string,
+    approvedAt: string;
+    approvedBy: number
+    rejectedBy: number
+    rejectedAt: string;
+    rejectionReason: string
 }
 
 interface DialogState {
@@ -38,7 +45,7 @@ const DailyExpenseAdmin: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const authCtx = useContext(AuthContext);
     const [uniqueUserNames, setUniqueUserNames] = useState<{ userName: string; userId: number }[]>([]);
-    const [selectedUniqueUserName, setSelectedUniqueUserName] = useState<string>("");
+    const [selectedUniqueUserName, setSelectedUniqueUserName] = useState<string>('');
     const [dialogState, setDialogState] = useState<DialogState>({
         dialogVisible: false,
         dialogIcon: '',
@@ -71,13 +78,13 @@ const DailyExpenseAdmin: React.FC = () => {
                 if (data.length > 0) {
                     setExpenses(data);
                     setFilteredExpenses(data); // Initialize filtered list with all data
-                    const uniqueUserNames = data.reduce((acc: { userName: string; userId: number }[], current) => {
+                    const uniqueNames = data.reduce((acc: { userName: string; userId: number }[], current) => {
                         if (current.userName && !acc.some(item => item.userName === current.userName)) {
                             acc.push({ userName: current.userName, userId: current.userId });
                         }
                         return acc;
                     }, []);
-                    setUniqueUserNames(uniqueUserNames);
+                    setUniqueUserNames(uniqueNames);
                 }
             } else {
                 console.error('Failed to fetch expenses data', result.message);
@@ -159,6 +166,7 @@ const DailyExpenseAdmin: React.FC = () => {
 
                     {/* Expense List */}
                     <FlatList
+                        style={{ marginBottom: 150 }}
                         data={filteredExpenses}
                         keyExtractor={(item) => item.expenseID.toString()}
                         renderItem={({ item }) => <AdminListItem item={item} fetchExpenses={fetchExpenses} />}

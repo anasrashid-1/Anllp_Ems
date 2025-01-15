@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useContext, useState, useEffect } from 'react';
 import {
     StyleSheet,
@@ -17,6 +18,7 @@ import { AuthContext } from '../store/auth-context';
 import DialogComp from '../components/DialogComp';
 import COLORS from '../constants/colors';
 import {
+
     MagnifyingGlassIcon,
     IdentificationIcon,
     UserIcon,
@@ -26,6 +28,7 @@ import {
     DocumentTextIcon,
     MapIcon,
     ExclamationCircleIcon,
+    StarIcon
 } from 'react-native-heroicons/solid';
 import Pdf from 'react-native-pdf';
 
@@ -114,7 +117,7 @@ export default function Growerdetails() {
     const fetchGrowerByName = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${authCtx.apiUrl}/growerdetails?name=${name}`, {
+            const response = await fetch(`${authCtx.apiUrl}/growerdetails/get?name=${name}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
@@ -149,7 +152,7 @@ export default function Growerdetails() {
     const fetchGrowerById = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${authCtx.apiUrl}/growerdetails?id=${id}`, {
+            const response = await fetch(`${authCtx.apiUrl}/growerdetails/get?id=${id}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
@@ -185,7 +188,7 @@ export default function Growerdetails() {
         setSelectedGrower(grower);
         setGrowers([]);
         setName('');
-        setId('')
+        setId('');
     };
 
     const handleGetDirections = (latitude: string, longitude: string) => {
@@ -265,6 +268,13 @@ export default function Growerdetails() {
                     <View style={styles.selectedGrower}>
                         <Text style={styles.detailsTitle}>Grower Information</Text>
 
+                        <View style={styles.detailRow}>
+                            <StarIcon size={20} color={COLORS.ACCENT_ORANGE} />
+                            <View style={styles.detailContent}>
+                                <Text style={styles.label}>ID</Text>
+                                <Text style={styles.value}>{selectedGrower.id}</Text>
+                            </View>
+                        </View>
                         <View style={styles.detailRow}>
                             <UserIcon size={20} color={COLORS.ACCENT_ORANGE} />
                             <View style={styles.detailContent}>

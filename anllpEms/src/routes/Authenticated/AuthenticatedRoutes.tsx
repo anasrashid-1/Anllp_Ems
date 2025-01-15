@@ -1,23 +1,23 @@
+/* eslint-disable react/no-unstable-nested-components */
+import { useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { View } from 'react-native';
 import { CalendarIcon, PlusIcon } from 'react-native-heroicons/solid';
 import COLORS from '../../constants/colors';
-import AddLeaveScreen from '../../screens/AddLeaveScreen';
-import AllUsersLeaveRequests from '../../screens/AllUsersLeaveRequests';
-import DailyExpenses from '../../screens/DailyExpenses';
-import HomeScreen from '../../screens/HomeScreen';
-import ProfileScreen from '../../screens/ProfileScreen';
-import BottomNavigator from './BottomNav/BottomNavigator';
 import AddDailyExpense from '../../screens/AddDailyExpense';
-import { useNavigation } from '@react-navigation/native';
-import DailyExpenseAdmin from '../../screens/DailyExpenseAdmin';
-import AttendanceAdmin from '../../screens/AttendanceAdmin';
-import EmployeeLocation from '../../screens/EmployeeLocation';
-import NotificationScreen from '../../screens/NotificationScreen';
-import SaledLeadScreen from '../../screens/SaledLeadScreen';
+import AddLeaveScreen from '../../screens/AddLeaveScreen';
 import AddSalesLead from '../../screens/AddSalesLead';
+import AllUsersLeaveRequests from '../../screens/AllUsersLeaveRequests';
+import AttendanceAdmin from '../../screens/AttendanceAdmin';
+import DailyExpenseAdmin from '../../screens/DailyExpenseAdmin';
+import DailyExpenses from '../../screens/DailyExpenses';
+import EmployeeLocation from '../../screens/EmployeeLocation';
 import Growerdetails from '../../screens/Growerdetails';
+import NotificationScreen from '../../screens/NotificationScreen';
+import ProfileScreen from '../../screens/ProfileScreen';
+import SalesLeadScreen from '../../screens/SalesLeadScreen';
+import BottomNavigator from './BottomNav/BottomNavigator';
 
 
 export type RootStackParamList = {
@@ -26,6 +26,14 @@ export type RootStackParamList = {
     Notifications: undefined;
     'Leave Application': undefined;
     'Leave Requests': undefined;
+    'Add Daily Expense': undefined;
+    'Add Sales Lead': undefined;
+    'Daily Expense Admin': undefined;
+    'Attendance Admin': undefined;
+    EmployeeLocation: undefined;
+    'Grower Details': undefined;
+    'Sales Lead': undefined;
+    'Daily Expenses': undefined;
 };
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -51,7 +59,7 @@ const AuthenticatedRoutes = () => {
             <Stack.Screen name="Attendance Admin" component={AttendanceAdmin} />
             <Stack.Screen name="EmployeeLocation" component={EmployeeLocation} />
             <Stack.Screen name="Grower Details" component={Growerdetails} />
-            <Stack.Screen name="Sales Lead" component={SaledLeadScreen} options={{
+            <Stack.Screen name="Sales Lead" component={SalesLeadScreen} options={{
                 tabBarIcon: ({ color, size }) => (
                     <CalendarIcon size={size} color={color} />
                 ),

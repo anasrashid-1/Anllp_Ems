@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { StyleSheet, View, TextInput, Text, TouchableOpacity } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {CalendarIcon} from 'react-native-heroicons/solid';
+import { CalendarIcon } from 'react-native-heroicons/solid';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
 import DialogComp from '../components/DialogComp';
@@ -80,7 +80,7 @@ const AddLeaveScreen: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch(`${authCtx.apiUrl}/leaveapplication`, {
+            const response = await fetch(`${authCtx.apiUrl}/leaves/add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ const AddLeaveScreen: React.FC = () => {
             )}
 
             {/* for dialog */}
-            <DialogComp dialogState={dialogState} setDialogState={setDialogState}/>
+            <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
 
         </View>
     );

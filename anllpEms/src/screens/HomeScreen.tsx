@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import Geolocation, { GeolocationError, GeolocationResponse } from '@react-native-community/geolocation';
 import React, { useContext, useEffect, useState } from 'react';
@@ -25,7 +26,7 @@ const Home: React.FC = () => {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const { apiUrl, token, userId } = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
-  const [location, setLocation] = useState({ latitude: null, longitude: null });
+  const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
 
   const isFocused = useIsFocused()
   const requestPermissionAndFetchLocation = async () => {

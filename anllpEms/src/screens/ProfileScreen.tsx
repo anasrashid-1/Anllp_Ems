@@ -48,7 +48,7 @@ const ProfileScreen = () => {
     }
 
     try {
-      const response = await fetch(`${authCtx.apiUrl}/changepassword`, {
+      const response = await fetch(`${authCtx.apiUrl}/auth/changepassword`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -67,8 +67,12 @@ const ProfileScreen = () => {
       } else {
         showDialog(data.message, 'alert');
       }
-    } catch (error) {
-      showDialog(error.message, 'alert');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showDialog(err.message, 'alert');
+      } else {
+        showDialog('An unknown error occurred', 'alert');
+      }
     }
   };
 
@@ -235,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.DARK_GRAY,
     fontWeight: '400',
-    paddingLeft: 10
+    paddingLeft: 10,
   },
   container: {
     flex: 1,

@@ -105,7 +105,7 @@ const LeaveRequests: React.FC = () => {
   
     const handleAction = async (LeaveId: number, applicantUserId: number, action: string) => {
       try {
-        const response = await fetch(`${useCtx.apiUrl}/leaveaction/${action}/${LeaveId}`, {
+        const response = await fetch(`${useCtx.apiUrl}/leaves/update/${action}/${LeaveId}`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${useCtx.token}`,

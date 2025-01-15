@@ -1,4 +1,4 @@
-import { createContext, useState, ReactNode } from "react";
+import { createContext, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -8,17 +8,19 @@ export interface AuthContextType {
   userName: string | null;
   userRole: string | null;
   userId: string | null;
+  profilePicture: string;
   isAuthenticated: boolean;
   authenticate: (data: { token: string, userName: string, userRole: string, userId: string }) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
-  apiUrl: 'https://468fsrq8-8080.inc1.devtunnels.ms',
+  apiUrl: 'https://468fsrq8-8090.inc1.devtunnels.ms/api',
   token: '',
   userName: '',
   userRole: '',
   userId: '',
+  profilePicture: '',
   isAuthenticated: false,
   authenticate: () => { },
   logout: () => { },
@@ -39,7 +41,7 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
     setUserName(data.userName);
     setUserRole(data.userRole);
     setUserId(data.userId);
-    AsyncStorage.setItem("userDetails", JSON.stringify(data))
+    AsyncStorage.setItem('userDetails', JSON.stringify(data))
       .then(() => {
         console.log('User details saved successfully');
       })

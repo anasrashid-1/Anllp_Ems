@@ -25,6 +25,10 @@ interface TransformedLogEntry {
     }[];
 }
 
+
+
+
+
 export default function EmployeeLocation({ route }: { route: { params: { id: number } } }) {
     const { id } = route.params;
 
@@ -91,7 +95,7 @@ export default function EmployeeLocation({ route }: { route: { params: { id: num
 
     useEffect(() => {
         fetchLog();
-    }, []);
+    });
 
     if (loading) {
         return (
@@ -130,13 +134,24 @@ export default function EmployeeLocation({ route }: { route: { params: { id: num
                 longitudeDelta: 0.1,
             }}
         >
-            {coordinates.map((coord, index) => (
-                <Marker
-                    key={index}
-                    coordinate={coord}
-                    title={`Log Point ${index + 1}`}
-                />
-            ))}
+            {coordinates.map((coord, index) => {
+                let pinColor = '#FF0000';
+
+                if (index === 0) {
+                    pinColor = '#0000FF';
+                } else if (index === coordinates.length - 1) {
+                    pinColor = '#00FF00';
+                }
+
+                return (
+                    <Marker
+                        key={index}
+                        coordinate={coord}
+                        title={`Log Point ${index + 1}`}
+                        pinColor={pinColor}
+                    />
+                );
+            })}
 
             {/* Polyline */}
             {coordinates.length > 1 && (
@@ -168,7 +183,7 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         marginHorizontal: 8,
-        marginVertical: 5
+        marginVertical: 5,
     },
     map: {
         flex: 1,
@@ -185,7 +200,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.WHITE,
         borderRadius: 10,
         padding: 15,
-        marginVertical: 10
+        marginVertical: 10,
     },
     title: {
         fontSize: 18,

@@ -50,7 +50,7 @@ const LoginScreen: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${authCtx.apiUrl}/login`, {
+      const res = await fetch(`${authCtx.apiUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

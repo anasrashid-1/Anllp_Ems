@@ -1,19 +1,27 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useContext, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { CalendarIcon } from 'react-native-heroicons/solid';
 import { ActivityIndicator } from 'react-native-paper';
 import { Row, Table } from 'react-native-table-component';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'EmployeeLocation'>;
+
+type RootStackParamList = {
+    EmployeeLocation: { id: number };
+};
 
 interface Attendance {
     userId: number;
     username: string;
-    attendanceId: number | null;
+    attendanceId: number;
     checkInTime: string | null;
     checkOutTime: string | null;
     sessionDuration: string | null;
@@ -41,14 +49,18 @@ export default function AttendanceAdmin() {
         { label: 'Half Day', value: 'Half Day' },
     ];
 
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
     const handleActionPress = (id: number) => {
         navigation.navigate('EmployeeLocation', { id });
     };
 
-    const handleDateChange = (selectedDate: Date) => {
-        setDate(selectedDate);
+    const handleDateChange = (selectedDate: Date | undefined) => {
         setShowDate(false);
+        if (!selectedDate) {
+            setDate(new Date());
+        } else {
+            setDate(selectedDate);
+        }
     };
 
     const formatSession = (minutes: number): string => {
@@ -59,12 +71,12 @@ export default function AttendanceAdmin() {
 
     const formatTime = (time: string | null) => {
         if (!time) { return 'N/A'; }
-        const date = new Date(time);
-        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getFullYear()).slice(2)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        const dateObj = new Date(time);
+        return `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getFullYear()).slice(2)} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
     };
 
     const fetchAttendance = async () => {
-        const d = new Date(date);
+        const d = date ? new Date(date) : new Date();
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
@@ -112,8 +124,8 @@ export default function AttendanceAdmin() {
     }, [selectedStatus, date]);
 
     // Filter out the columns we don't want to display
-    const getDisplayColumns = (data: Attendance) => {
-        const { createdAt, attendanceId, ...rest } = data;
+    const getDisplayColumns = (item: Attendance) => {
+        const { createdAt, attendanceId, ...rest } = item;
         return rest;
     };
 
@@ -133,21 +145,21 @@ export default function AttendanceAdmin() {
                     <View style={styles.cardsContainer}>
                         <View style={styles.card}>
                             <Text style={styles.cardValueText}>
-                                {100 ?? 'N/A'}
+                                {100}
                             </Text>
                             <Text style={styles.cardDescText}>Total</Text>
                             <Text style={styles.cardExtraText}>All Employees</Text>
                         </View>
                         <View style={styles.card}>
                             <Text style={styles.cardValueText}>
-                                {100 ?? 'N/A'}
+                                {100}
                             </Text>
                             <Text style={styles.cardDescText}>Present</Text>
                             <Text style={styles.cardExtraText}>Employees Present Today</Text>
                         </View>
                         <View style={styles.card}>
                             <Text style={styles.cardValueText}>
-                                {0 ?? 'N/A'}
+                                {0}
                             </Text>
                             <Text style={styles.cardDescText}>Onleave</Text>
                             <Text style={styles.cardExtraText}>Employees Onleave Today</Text>
@@ -180,7 +192,7 @@ export default function AttendanceAdmin() {
                             >
                                 <TextInput
                                     style={styles.dateInput}
-                                    value={date.toLocaleDateString()}
+                                    value={date?.toLocaleDateString()}
                                     editable={false}
                                 />
                                 <CalendarIcon size={20} color={COLORS.ACCENT_ORANGE} />
@@ -195,12 +207,14 @@ export default function AttendanceAdmin() {
                             )}
                         </View>
                     </View>
-                    <ScrollView>
-                        {attendanceData.length > 0 ? <ScrollView style={styles.container} horizontal>
-                            <View>
+                    {attendanceData.length > 0 ? <ScrollView style={styles.container} horizontal>
+                        <View>
+                            <View style={styles.stickyHeaderContainer}>
                                 <Table borderStyle={{ borderWidth: 2, borderColor: COLORS.DARK_GRAY }}>
-                                    <Row data={tableHead} style={styles.head} textStyle={styles.text} />
+                                    <Row data={tableHead} style={styles.head} textStyle={styles.text} widthArr={Array(tableHead.length).fill(150)} />
                                 </Table>
+                            </View>
+                            <ScrollView>
                                 {attendanceData.map((rowData, rowIndex) => (
                                     <View key={rowIndex} style={styles.row}>
                                         {Object.entries(getDisplayColumns(rowData)).map(([key, value], cellIndex) => {
@@ -222,21 +236,20 @@ export default function AttendanceAdmin() {
                                             <TouchableOpacity
                                                 disabled={!rowData.checkInTime}
                                                 style={[styles.button, { backgroundColor: !rowData.checkInTime ? COLORS.DARK_GRAY : COLORS.ACCENT_ORANGE }]}
-                                                onPress={() => handleActionPress(rowData.attendanceId)}
+                                                onPress={() => handleActionPress(rowData?.attendanceId)}
                                             >
                                                 <Text style={styles.buttonText}>View</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
                                 ))}
-                            </View>
-                        </ScrollView> :
-
-                            <Text style={styles.placeholderText}>
-                                📊 No data available. 🔍 Please adjust the filters and try again.
-                            </Text>
-                        }
-                    </ScrollView>
+                            </ScrollView>
+                        </View>
+                    </ScrollView> :
+                        <Text style={styles.placeholderText}>
+                            📊 No data available. 🔍 Please adjust the filters and try again.
+                        </Text>
+                    }
                 </>
             )}
         </View>
@@ -249,6 +262,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 12,
         paddingBottom: 0,
+    },
+    stickyHeaderContainer: {
+        zIndex: 1,
+        backgroundColor: 'white',
     },
     placeholderText: {
         fontSize: 14,
@@ -275,7 +292,8 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 10,
+        paddingHorizontal: 5,
+        paddingVertical: 5,
         borderRightWidth: 1,
         borderLeftWidth: 1,
         borderColor: COLORS.DARK_GRAY,

@@ -77,7 +77,7 @@ export default function AdminListItem({ item, fetchExpenses }: ListItemProps) {
                 ...(action === 'Rejected' ? { rejectionReason: remarks.trim() } : {}),
             };
 
-            const response = await fetch(`${authCtx.apiUrl}/dailyexpenses`, {
+            const response = await fetch(`${authCtx.apiUrl}/dailyexpenses/update`, {
                 method: 'PATCH',
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
