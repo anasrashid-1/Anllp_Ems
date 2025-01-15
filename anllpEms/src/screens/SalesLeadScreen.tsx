@@ -121,7 +121,7 @@ const SalesLeadScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Sales Leads</Text>
+            {/* <Text style={styles.title}>Sales Leads</Text> */}
 
             {isLoading ? (
                 <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />

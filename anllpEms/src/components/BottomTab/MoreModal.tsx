@@ -29,12 +29,17 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
             {/* Row 1 */}
             <View style={styles.row}>
               <Tab icon="UserGroupIcon" name="Daily Expenses" route="Daily Expenses" toggleModal={toggleModal} />
-              {rbac(userId) && <Tab icon="UserGroupIcon" name="Expenses Admin" route="Daily Expense Admin" toggleModal={toggleModal} />}
               <Tab icon="ChartBarIcon" name="Sales Lead" route="Sales Lead" toggleModal={toggleModal} />
               <Tab icon="ChartBarIcon" name="Grower Details" route="Grower Details" toggleModal={toggleModal} />
-              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Leave Requests" route="Leave Requests" toggleModal={toggleModal} />}
-              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Attendance Admin" route="Attendance Admin" toggleModal={toggleModal} />}
             </View>
+            {/* Row 2 */}
+            <Text  style={styles.adminRoutes} >Admin Routes</Text>
+            <View style={styles.row}>
+              {rbac(userId) && <Tab icon="UserGroupIcon" name="Expenses" route="Daily Expense Admin" toggleModal={toggleModal} />}
+              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Leaves" route="Leave Requests" toggleModal={toggleModal} />}
+              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Attendance" route="Attendance Admin" toggleModal={toggleModal} />}
+            </View>
+
           </View>
         </View>
       </Pressable>
@@ -69,6 +74,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     flexWrap: "wrap"
+  },
+  adminRoutes: {
+    borderBottomWidth: 1, 
+    color: 'gray',
+    borderBottomColor: 'gray', // Set underline color
+    marginBottom: 24,
   },
 });
 

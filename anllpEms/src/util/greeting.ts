@@ -10,8 +10,9 @@ function getGreeting(employeeName: string): { firstLine: string; secondLine: str
     timeOfDay = 'Evening';
   }
 
+  const trimmedName = employeeName.length > 5 ? employeeName.slice(0, 5) : employeeName;
   return {
-    firstLine: `${timeOfDay}, ${employeeName}`,
+    firstLine: `${timeOfDay}, ${trimmedName}`,
     secondLine: "Manage your working day.",
   };
 }
