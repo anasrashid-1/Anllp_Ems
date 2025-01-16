@@ -36,7 +36,7 @@ const LeaveRequests: React.FC = () => {
   const [filteredLeaveRequests, setFilteredLeaveRequests] = useState<LeaveRequest[]>([]);
 
   const [loading, setLoading] = useState(true);
-  
+
   const [dialogState, setDialogState] = useState<DialogState>({
     dialogVisible: false,
     dialogIcon: "",
@@ -56,7 +56,7 @@ const LeaveRequests: React.FC = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${useCtx.apiUrl}/leaves`, {
+      const response = await fetch(`${useCtx.apiUrl}/leaves/get`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${useCtx.token}`,
@@ -99,10 +99,10 @@ const LeaveRequests: React.FC = () => {
     const ApprovedAt = new Date(item.ApprovedAt);
     const RejectedAt = new Date(item.RejectedAt);
     const formattedStatusSate = item.Status === 'Approved'
-    ? `${ApprovedAt.getDate()} ${ApprovedAt.toLocaleString('en-US', { month: 'short' })}`
-    : `${RejectedAt.getDate()} ${RejectedAt.toLocaleString('en-US', { month: 'short' })}`;
-  
-  
+      ? `${ApprovedAt.getDate()} ${ApprovedAt.toLocaleString('en-US', { month: 'short' })}`
+      : `${RejectedAt.getDate()} ${RejectedAt.toLocaleString('en-US', { month: 'short' })}`;
+
+
     const handleAction = async (LeaveId: number, applicantUserId: number, action: string) => {
       try {
         const response = await fetch(`${useCtx.apiUrl}/leaves/update/${action}/${LeaveId}`, {
@@ -249,9 +249,9 @@ const LeaveRequests: React.FC = () => {
         </View>
       )}
 
-      
-       {/* for dialog */}
-       <DialogComp dialogState={dialogState} setDialogState={setDialogState}/>
+
+      {/* for dialog */}
+      <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
     </View>
   );
 };

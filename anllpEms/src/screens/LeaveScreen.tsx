@@ -1,11 +1,12 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useContext, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator } from "react-native-paper";
+import DialogComp from '../components/DialogComp';
+import RequestList from '../components/LeaveRequestScreen/RequestList';
 import COLORS from '../constants/colors';
 import { AuthContext, AuthContextType } from './../store/auth-context';
-import { ActivityIndicator } from "react-native-paper";
-import { useFocusEffect } from '@react-navigation/native';
-import RequestList from '../components/LeaveRequestScreen/RequestList';
-import DialogComp from '../components/DialogComp';
 
 // Define types for the leave data and balance
 interface LeaveData {
@@ -42,12 +43,13 @@ const LeavesScreen: React.FC = () => {
       dialogIcon: icon,
     });
   };
+
   useFocusEffect(
     useCallback(() => {
       const fetchLeaveData = async () => {
         try {
           setLoading(true); // Start loading
-          const response = await fetch(`${useCtx.apiUrl}/leaves/${useCtx.userId}`, {
+          const response = await fetch(`${useCtx.apiUrl}/leaves/get/${useCtx.userId}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${useCtx.token}`,

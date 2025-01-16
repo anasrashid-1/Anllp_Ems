@@ -6,7 +6,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import COLORS from '../../constants/colors';
@@ -145,9 +145,9 @@ export default function AdminListItem({ item, fetchExpenses }: ListItemProps) {
                     {/* Status Badge */}
                     <Text style={[
                         styles.statusBadge,
-                        item.status === "Approved" ? styles.approvedBadge :
-                            item.status === "Rejected" ? styles.rejectedBadge :
-                                styles.pendingBadge
+                        item.status === 'Approved' ? styles.approvedBadge :
+                            item.status === 'Rejected' ? styles.rejectedBadge :
+                                styles.pendingBadge,
                     ]}>
                         {item.status}
                     </Text>
@@ -155,14 +155,14 @@ export default function AdminListItem({ item, fetchExpenses }: ListItemProps) {
             </View>
 
             {/* Status Details */}
-            {(item.status === "Approved" || item.status === "Rejected") && (
+            {(item.status === 'Approved' || item.status === 'Rejected') && (
                 <View style={styles.statusDetails}>
-                    {item.status === "Approved" && (
+                    {item.status === 'Approved' && (
                         <Text style={styles.statusInfo}>
                             Approved at: {formatTime(item.approvedAt)} by {item.approvedBy}
                         </Text>
                     )}
-                    {item.status === "Rejected" && (
+                    {item.status === 'Rejected' && (
                         <>
                             <Text style={styles.statusInfo}>
                                 Rejected at: {formatTime(item.rejectedAt)} by {item.rejectedBy}
@@ -176,7 +176,7 @@ export default function AdminListItem({ item, fetchExpenses }: ListItemProps) {
             )}
 
             {/* Action Buttons */}
-            {item.status === "Pending" && (
+            {item.status === 'Pending' && (
                 <View style={styles.buttonContainer}>
                     <Button
                         mode="contained"
@@ -362,17 +362,17 @@ const styles = StyleSheet.create({
     actionButton: {
         flex: 1,
         borderRadius: 8,
-        height: 36,
+        height: 40,
     },
     buttonLabel: {
         fontSize: 14,
         fontWeight: '600',
     },
     rejectButton: {
-        backgroundColor: '#FF4D4F',
+        backgroundColor: COLORS.PRIMARY_RED,
     },
     approveButton: {
-        backgroundColor: '#52C41A',
+        backgroundColor: COLORS.DARK_GREEN,
     },
     modalOverlay: {
         flex: 1,
@@ -439,4 +439,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-})
+});

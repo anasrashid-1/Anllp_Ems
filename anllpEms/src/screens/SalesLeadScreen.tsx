@@ -159,7 +159,7 @@ const SalesLeadScreen: React.FC = () => {
                                         <View key={rowIndex} style={styles.row}>
                                             {rowData.map((value, cellIndex) => (
                                                 <View key={cellIndex} style={[styles.cell, { width: 150 }]}>
-                                                    <Text style={styles.rowText}>{value ?? 'N/A'}</Text>
+                                                    <Text style={styles.rowText}>{value ? value.trim() : 'N/A'}</Text>
                                                 </View>
                                             ))}
                                             <View style={[styles.cell, { width: 150 }]}>

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
 
@@ -25,16 +25,10 @@ interface TransformedLogEntry {
     }[];
 }
 
-
-
-
-
 export default function EmployeeLocation({ route }: { route: { params: { id: number } } }) {
     const { id } = route.params;
-
     const [loading, setLoading] = useState<boolean>(false);
     const [logData, setLogData] = useState<{ [attendanceId: number]: TransformedLogEntry }>({});
-
     const { apiUrl, token } = useContext(AuthContext);
 
     const fetchLog = async () => {
@@ -82,20 +76,35 @@ export default function EmployeeLocation({ route }: { route: { params: { id: num
                 };
             }
 
-            map[entry.attendanceId].logs.push({
-                locationId: entry.locationId,
-                latitude: entry.latitude,
-                longitude: entry.longitude,
-                loggedAt: entry.loggedAt,
-            });
+            if (isValidCoordinate(entry.latitude, entry.longitude)) {
+                map[entry.attendanceId].logs.push({
+                    locationId: entry.locationId,
+                    latitude: entry.latitude,
+                    longitude: entry.longitude,
+                    loggedAt: entry.loggedAt,
+                });
+            }
         });
 
         return map;
     };
 
+    const isValidCoordinate = (latitude: number, longitude: number): boolean => {
+        return (
+            typeof latitude === 'number' &&
+            typeof longitude === 'number' &&
+            !isNaN(latitude) &&
+            !isNaN(longitude) &&
+            latitude >= -90 &&
+            latitude <= 90 &&
+            longitude >= -180 &&
+            longitude <= 180
+        );
+    };
+
     useEffect(() => {
         fetchLog();
-    });
+    }, []);
 
     if (loading) {
         return (
@@ -105,12 +114,38 @@ export default function EmployeeLocation({ route }: { route: { params: { id: num
         );
     }
 
-    // Extract coordinates from API data
     const userLogs = logData[id]?.logs || [];
-    const coordinates = userLogs.map((log) => ({
-        latitude: log.latitude,
-        longitude: log.longitude,
-    }));
+    const coordinates = userLogs
+        .map((log) => ({
+            latitude: log.latitude,
+            longitude: log.longitude,
+        }))
+        .filter((coord) => isValidCoordinate(coord.latitude, coord.longitude));
+
+    const getInitialRegion = (): Region => {
+        if (coordinates.length === 0) {
+            return {
+                latitude: 0,
+                longitude: 0,
+                latitudeDelta: 0.1,
+                longitudeDelta: 0.1,
+            };
+        }
+
+        const lats = coordinates.map((coord) => coord.latitude);
+        const lngs = coordinates.map((coord) => coord.longitude);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+
+        return {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            latitudeDelta: Math.max(0.1, (maxLat - minLat) * 1.5),
+            longitudeDelta: Math.max(0.1, (maxLng - minLng) * 1.5),
+        };
+    };
 
     const renderUserInfo = () => (
         <View style={styles.scrollView}>
@@ -124,45 +159,62 @@ export default function EmployeeLocation({ route }: { route: { params: { id: num
         </View>
     );
 
-    const renderMap = () => (
-        <MapView
-            style={styles.map}
-            initialRegion={{
-                latitude: userLogs[0]?.latitude || 0,
-                longitude: userLogs[0]?.longitude || 0,
-                latitudeDelta: 0.1,
-                longitudeDelta: 0.1,
-            }}
-        >
-            {coordinates.map((coord, index) => {
-                let pinColor = '#FF0000';
-
-                if (index === 0) {
-                    pinColor = '#0000FF';
-                } else if (index === coordinates.length - 1) {
-                    pinColor = '#00FF00';
-                }
-
-                return (
-                    <Marker
-                        key={index}
-                        coordinate={coord}
-                        title={`Log Point ${index + 1}`}
-                        pinColor={pinColor}
-                    />
-                );
-            })}
-
-            {/* Polyline */}
-            {coordinates.length > 1 && (
-                <Polyline
-                    coordinates={coordinates}
-                    strokeColor={'#FF0000'}
-                    strokeWidth={4}
+    const renderMap = () => {
+        if (coordinates.length === 0) {
+            return (
+                <MapView
+                    style={styles.map}
+                    initialRegion={{
+                        latitude: 0,
+                        longitude: 0,
+                        latitudeDelta: 0.1,
+                        longitudeDelta: 0.1,
+                    }}
                 />
-            )}
-        </MapView>
-    );
+            );
+        }
+
+        return (
+            <MapView
+                style={styles.map}
+                initialRegion={getInitialRegion()}
+            >
+                {coordinates.map((coord, index) => {
+                    let pinColor = '#FF0000';
+
+                    if (index === 0) {
+                        pinColor = '#0000FF';
+                    } else if (index === coordinates.length - 1) {
+                        pinColor = '#00FF00';
+                    }
+
+                    return (
+                        <Marker
+                            key={`point-${index}`}
+                            coordinate={coord}
+                            pinColor={pinColor}
+                            title={
+                                index === 0
+                                    ? 'Start Point'
+                                    : index === coordinates.length - 1
+                                        ? 'End Point'
+                                        : `Point ${index + 1}`
+                            }
+                        />
+                    );
+                })}
+
+                {coordinates.length > 1 && (
+                    <Polyline
+                        coordinates={coordinates}
+                        strokeColor="#FF0000"
+                        strokeWidth={4}
+                    />
+                )}
+            </MapView>
+        );
+    };
+
 
     return (
         <View style={styles.mainContainer}>
@@ -212,5 +264,4 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 5,
     },
-
 });

@@ -3,16 +3,15 @@ import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
 import ListItem from '../components/DailyExpense/ListItem';
 import DialogComp from '../components/DialogComp';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
-import { Dropdown } from 'react-native-element-dropdown';
 
 interface Expense {
   expenseID: number;

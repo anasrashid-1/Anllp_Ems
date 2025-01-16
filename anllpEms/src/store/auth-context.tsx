@@ -1,9 +1,11 @@
 import { createContext, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
+const apiUrl = Config.API_URL;
 
 
 export interface AuthContextType {
-  apiUrl: string;
+  apiUrl: string | undefined;
   token: string | null;
   userName: string | null;
   userRole: string | null;
@@ -15,7 +17,7 @@ export interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextType>({
-  apiUrl: 'https://468fsrq8-8090.inc1.devtunnels.ms/api',
+  apiUrl: apiUrl,
   token: '',
   userName: '',
   userRole: '',
@@ -58,7 +60,7 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
   }
 
   const value = {
-    apiUrl: 'https://468fsrq8-8080.inc1.devtunnels.ms',
+    apiUrl: apiUrl,
     token: authToken,
     userName: userName,
     userRole: userRole,

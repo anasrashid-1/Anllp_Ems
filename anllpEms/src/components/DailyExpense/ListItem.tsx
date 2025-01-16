@@ -22,13 +22,13 @@ export default function ListItem({ item }: ListItemProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Pending':
-                return COLORS.ACCENT_ORANGE
+                return COLORS.ACCENT_ORANGE;
             case 'Approved':
-                return COLORS.LIGHT_GREEN
+                return COLORS.LIGHT_GREEN;
             case 'Rejected':
-                return COLORS.PRIMARY_RED
+                return COLORS.PRIMARY_RED;
             default:
-                return COLORS.DARK_GRAY
+                return COLORS.DARK_GRAY;
         }
     };
 
