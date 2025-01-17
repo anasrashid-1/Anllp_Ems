@@ -1,6 +1,9 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import Geolocation, { GeolocationError, GeolocationResponse } from '@react-native-community/geolocation';
+import messaging from '@react-native-firebase/messaging';
+import { useIsFocused } from '@react-navigation/native';
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import BackgroundService, { BackgroundTaskOptions } from 'react-native-background-actions';
@@ -8,9 +11,7 @@ import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
 import { AuthContext } from '../store/auth-context';
 import requestPermissions from '../util/requestPermissions';
-import messaging from '@react-native-firebase/messaging';
-import notifee, { AndroidImportance } from '@notifee/react-native';
-import { useIsFocused } from '@react-navigation/native';
+
 
 
 export interface AttendanceStatus {
@@ -28,9 +29,11 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
 
-  const isFocused = useIsFocused()
+  const isFocused = useIsFocused();
+
   const requestPermissionAndFetchLocation = async () => {
     const hasPermissions = await requestPermissions();
+
     if (!hasPermissions) {
       Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
       return;

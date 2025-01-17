@@ -1,36 +1,33 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    View,
-    TextInput,
     ActivityIndicator,
     FlatList,
-    TouchableOpacity,
     Linking,
-    SafeAreaView,
     Platform,
+    SafeAreaView,
     ScrollView,
-    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { AuthContext } from '../store/auth-context';
-import DialogComp from '../components/DialogComp';
-import COLORS from '../constants/colors';
 import {
-
-    MagnifyingGlassIcon,
+    DocumentTextIcon,
+    ExclamationCircleIcon,
     IdentificationIcon,
-    UserIcon,
-    UsersIcon,
+    MagnifyingGlassIcon,
+    MapIcon,
     MapPinIcon,
     PhoneIcon,
-    DocumentTextIcon,
-    MapIcon,
-    ExclamationCircleIcon,
-    StarIcon
+    StarIcon,
+    UserIcon,
+    UsersIcon
 } from 'react-native-heroicons/solid';
-import Pdf from 'react-native-pdf';
+import DialogComp from '../components/DialogComp';
+import COLORS from '../constants/colors';
+import { AuthContext } from '../store/auth-context';
 
 interface Grower {
     id: number;
@@ -55,7 +52,6 @@ export default function Growerdetails() {
     const [id, setId] = useState('');
     const [growers, setGrowers] = useState<Grower[]>([]);
     const [selectedGrower, setSelectedGrower] = useState<Grower | null>(null);
-    const [pdfModalVisible, setPdfModalVisible] = useState(false);
     const [notFound, setNotFound] = useState(false);
     const [dialogState, setDialogState] = useState<DialogState>({
         dialogVisible: false,
@@ -63,17 +59,20 @@ export default function Growerdetails() {
         dialogMessage: '',
     });
 
-    const handleOpenPDF = (pdfLink: string | null) => {
+    const handleOpenPDF = async (pdfLink: string | null) => {
         if (pdfLink) {
-            setPdfModalVisible(true);
+            try {
+                await Linking.openURL(pdfLink);
+            } catch (error) {
+                console.error('Error opening PDF link:', error);
+                showDialog('An error occurred while trying to open the PDF.', 'error');
+            }
         } else {
             showDialog('PDF is not available.', 'error');
         }
     };
 
-    const closePdfModal = () => {
-        setPdfModalVisible(false);
-    };
+
 
     const authCtx = useContext(AuthContext);
 
@@ -333,41 +332,7 @@ export default function Growerdetails() {
                 )}
             </ScrollView>
 
-            <Modal
-                visible={pdfModalVisible}
-                animationType="slide"
-                onRequestClose={closePdfModal}
-            >
-                <SafeAreaView style={styles.modalContainer}>
-                    <View style={styles.modalHeader}>
-                        <TouchableOpacity onPress={closePdfModal}>
-                            <Text style={styles.modalCloseButton}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
 
-                    {selectedGrower && selectedGrower.pdfLink ? (
-                        <Pdf
-                            source={{ uri: selectedGrower.pdfLink, cache: true }}
-                            onLoadComplete={(numberOfPages) => {
-                                console.log(`Number of pages: ${numberOfPages}`);
-                            }}
-                            onError={(error) => {
-                                console.error(error);
-                                showDialog('Failed to load PDF.', 'error');
-                            }}
-                            onLoadProgress={(percent) => {
-                                console.log(`Loading progress: ${percent}%`);
-                            }}
-                            style={styles.pdf}
-                        />
-                    ) : (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
-                            <Text>Loading PDF...</Text>
-                        </View>
-                    )}
-                </SafeAreaView>
-            </Modal>
 
             <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
         </SafeAreaView>
