@@ -5,12 +5,14 @@ import Geolocation, { GeolocationError, GeolocationResponse } from '@react-nativ
 import messaging from '@react-native-firebase/messaging';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import BackgroundService, { BackgroundTaskOptions } from 'react-native-background-actions';
 import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
 import { AuthContext } from '../store/auth-context';
 import requestPermissions from '../util/requestPermissions';
+import { ActivityIndicator } from 'react-native-paper';
+import COLORS from '../constants/colors';
 
 
 
@@ -27,6 +29,7 @@ const Home: React.FC = () => {
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
   const { apiUrl, token, userId } = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
+  const [locLoading, setLocLading] = useState<boolean>(false);
   const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
 
   const isFocused = useIsFocused();
@@ -38,14 +41,18 @@ const Home: React.FC = () => {
       Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
       return;
     }
+    setLocLading(true)
+
 
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setLocation({ latitude, longitude });
+        setLocLading(false)
       },
       (error) => {
         console.error(error);
+        setLocLading(false)
       },
       { enableHighAccuracy: true, distanceFilter: 10 }
     );
@@ -150,7 +157,6 @@ const Home: React.FC = () => {
         (error: GeolocationError) => {
           console.error('Geolocation Error:', error);
         },
-        { enableHighAccuracy: true, distanceFilter: 10 }
       );
 
       await sleep(delay);
@@ -336,6 +342,13 @@ const Home: React.FC = () => {
   }, []);
 
 
+  if (loading || locLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={COLORS.DARK_GRAY} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -351,3 +364,14 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    justifyContent: 'center',
+  },
+
+});
+

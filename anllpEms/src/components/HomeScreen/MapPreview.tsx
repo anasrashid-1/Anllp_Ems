@@ -1,19 +1,23 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { DevSettings, StyleSheet, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import COLORS from '../../constants/colors';
-import { Button } from 'react-native-paper';
 
-export default function MapPreview({ location, requestPermissionAndFetchLocation }) {
+export default function MapPreview({ location }) {
+
+    const handleGrantPermission = () => {
+        DevSettings.reload()
+    };
 
     if (!location?.latitude || !location?.longitude) {
         return (
-            <View style={[styles.container, { height: "100%", padding: 12 }]}>
+            <View style={[styles.container, { height: '100%', padding: 12 }]}>
                 <View style={styles.placeholder}>
                     <Text style={styles.placeholderText}>
                         🗺️ Location not found. 📍 Please turn on location service to continue.
                     </Text>
-                    <Button labelStyle={{ color: COLORS.ACCENT_ORANGE }} onPress={requestPermissionAndFetchLocation}>Grant Permission</Button>
+                    <Button labelStyle={{ color: COLORS.ACCENT_ORANGE }} onPress={handleGrantPermission}>Grant Permission</Button>
                 </View>
             </View>
         );

@@ -8,7 +8,10 @@ import * as ImagePicker from 'react-native-image-picker';
 import DialogComp from '../components/DialogComp';
 import COLORS from '../constants/colors';
 import { AuthContext } from '../store/auth-context';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
 import requestPermissions from '../util/requestPermissions';
+
+const MAX_SIZE_KB = 300;
 
 interface FormData {
     expenseDate: Date;
@@ -159,7 +162,6 @@ const AddExpenseScreen: React.FC = () => {
             setIsSubmitting(false);
         }
     };
-
     const pickImage = () => {
         ImagePicker.launchCamera({ mediaType: 'photo' }, (response) => {
             if (response.didCancel) {
@@ -167,10 +169,34 @@ const AddExpenseScreen: React.FC = () => {
             } else if (response.errorCode) {
                 console.log('ImagePicker Error: ', response.errorMessage);
             } else {
-                setFormData((prev) => ({
-                    ...prev,
-                    image: response.assets ? response.assets[0] : null,
-                }));
+                if (response.assets && response.assets[0]) {
+                    const image = response.assets[0];
+
+                    // Log the image size in KB
+                    console.log(`Image Size: ${image.fileSize / 1024} KB`);
+
+                    // Check if image size exceeds the limit
+                    if (image.fileSize > MAX_SIZE_KB * 1024) {
+                        // Resize the image if it's larger than the limit (3 MB)
+                        ImageResizer.createResizedImage(image.uri, 800, 800, 'JPEG', 70)
+                            .then((resizedImage) => {
+                                console.log(`Resized Image Size: ${resizedImage.size / 1024} KB`);
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    image: resizedImage,
+                                }));
+                            })
+                            .catch((err) => {
+                                console.error('Error resizing image:', err);
+                            });
+                    } else {
+                        // Set the image without resizing if it's within the size limit
+                        setFormData((prev) => ({
+                            ...prev,
+                            image,
+                        }));
+                    }
+                }
             }
         });
     };
