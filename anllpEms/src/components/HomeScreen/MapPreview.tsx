@@ -3,15 +3,34 @@ import { DevSettings, StyleSheet, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import COLORS from '../../constants/colors';
+import LocationServicesDialogBox from 'react-native-android-location-services-dialog-box';
 
-export default function MapPreview({ location }) {
+
+export default function MapPreview({ location }: any) {
 
     const handleGrantPermission = () => {
-        DevSettings.reload()
+        LocationServicesDialogBox.checkLocationServicesIsEnabled({
+            message: `<font color=${COLORS.DARK_GRAY}>Want to use location services?</font>`,
+            ok: 'YES',
+            cancel: 'NO',
+            style: {
+                backgroundColor: COLORS.WHITE,
+                positiveButtonTextColor: COLORS.ACCENT_ORANGE,
+                positiveButtonBackgroundColor: COLORS.WHITE,
+                negativeButtonTextColor: COLORS.DARK_GRAY,
+                negativeButtonBackgroundColor: COLORS.WHITE,
+            },
+        }).then(function (success: any) {
+            console.log(success);
+            DevSettings.reload();
+        }).catch((error: { message: any; }) => {
+            console.log(error.message);
+        });
     };
 
     if (!location?.latitude || !location?.longitude) {
         return (
+            // eslint-disable-next-line react-native/no-inline-styles
             <View style={[styles.container, { height: '100%', padding: 12 }]}>
                 <View style={styles.placeholder}>
                     <Text style={styles.placeholderText}>

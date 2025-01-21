@@ -5,7 +5,7 @@ import Geolocation, { GeolocationError, GeolocationResponse } from '@react-nativ
 import messaging from '@react-native-firebase/messaging';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useContext, useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import BackgroundService, { BackgroundTaskOptions } from 'react-native-background-actions';
 import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
@@ -41,22 +41,20 @@ const Home: React.FC = () => {
       Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
       return;
     }
-    setLocLading(true)
-
+    setLocLading(true);
 
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setLocation({ latitude, longitude });
-        setLocLading(false)
+        setLocLading(false);
       },
       (error) => {
         console.error(error);
-        setLocLading(false)
+        setLocLading(false);
       },
       { enableHighAccuracy: true, distanceFilter: 10 }
     );
-
   };
 
   useEffect(() => {
@@ -346,13 +344,14 @@ const Home: React.FC = () => {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={COLORS.DARK_GRAY} />
+        <Text style={{ marginTop: 15, textAlign: 'center', color: COLORS.DARK_GRAY }}>Fetching location ...</Text>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <MapPreview location={location} requestPermissionAndFetchLocation={requestPermissionAndFetchLocation} />
+      <MapPreview location={location} />
       <MarkAttendance
         handleCheckIn={handleCheckIn}
         stopTracking={stopBackgroundTracking}
