@@ -175,7 +175,7 @@ const Home: React.FC = () => {
     color: '#ff00ff',
     linkingURI: 'com.anllpems://chat/jane',
     parameters: {
-      delay: 10000,
+      delay: 1800000,
     },
     foreground: true,
     notification: {
