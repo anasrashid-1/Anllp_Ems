@@ -36,8 +36,8 @@ const getGrowerDetails = async (req, res) => {
         if (id && data.length === 1) {
             const pdfPath = path.join(__dirname, '../growerLayouts', `${id}.pdf`); 
             if (fs.existsSync(pdfPath)) {
-                // item.image = `${req.protocol}://${req.get('host')}/images/${item.expenseImg}`;
-                data[0].pdfLink = `https://468fsrq8-8080.inc1.devtunnels.ms/growerLayouts/${id}.pdf`
+                 data[0].pdfLink= `${req.protocol}://${req.get('host')}/growerLayouts/${id}.pdf`;
+                //data[0].pdfLink = `https://468fsrq8-8080.inc1.devtunnels.ms/growerLayouts/${id}.pdf`
             } else {
                 data[0].pdfLink = null;
             }

@@ -5,9 +5,9 @@ const Sequelize = require('sequelize');
 //         dialect: "mssql",
 //     }
 // )
-const connection = new Sequelize("ANURSERY25","dev","123",{
-    host: "localhost",
-    dialect: "mssql",
-}
-)
-module.exports = connection;
+// const connection = new Sequelize("ANURSERY25","dev","123",{
+//     host: "localhost",
+//     dialect: "mssql",
+// }
+// )
+

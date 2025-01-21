@@ -2,7 +2,7 @@ const express = require('express');
 const {authMiddleware} = require("../middlewares/authMiddleware");
 const uploadMiddleware = require("../middlewares/multer.middleware");
 const router = express.Router();
-const {postDailyExpenses, patchDailyExpenses, getDailyExpenses} = require("../controllers/DailyExpensesController");
+const {postDailyExpenses, patchDailyExpenses, getDailyExpenses} = require("../controllers/dailyExpensesController");
 
 
 
