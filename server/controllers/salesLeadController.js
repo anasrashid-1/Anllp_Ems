@@ -6,13 +6,13 @@ const postSalesLead = async (req, res) => {
         if (!firmname || !groweraddress || !growerreference || !leadtype || !growercell || !areakanal || !areamarla || !sitelocation || !latitude || !longitude) {
             return res.status(400).json({ message: "All fields are required." });
         }
-        const maxWidQuery = `SELECT MAX(wid) AS max_wid FROM subwrk3`;
+        const maxWidQuery = `SELECT MAX(wid) AS max_wid FROM subwrk3Test`;
         const [maxWidResult] = await connection.query(maxWidQuery);
         let maxWid = maxWidResult[0].max_wid || 0;
         maxWid += 1;
 
         const query = `
-            INSERT INTO subwrk3 (wid, sname, firm, gaddress, growerreference, leadtype, gcellno ,mcrates, marla, glocation, latitude, longitude, tdate, eid)
+            INSERT INTO subwrk3Test (wid, sname, firm, gaddress, growerreference, leadtype, gcellno ,mcrates, marla, glocation, latitude, longitude, tdate, eid)
             VALUES (?, 'Abraq Nurseries LLP', ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, GETDATE(), ?)`;
 
@@ -51,7 +51,7 @@ const putSalesLead = async (req, res) => {
 
         // Check if there's a sales lead
         const existingLead = await connection.query(
-            `SELECT wid FROM subwrk3 WHERE wid = ? `,
+            `SELECT wid FROM subwrk3Test WHERE wid = ? `,
             {
                 replacements: [wid],
                 type: connection.QueryTypes.SELECT,
@@ -63,7 +63,7 @@ const putSalesLead = async (req, res) => {
         }
 
         const query = `
-            UPDATE subwrk3
+            UPDATE subwrk3Test
             SET firm = ?, gaddress = ?, growerreference = ?, leadtype = ?, gcellno = ?, mcrates = ?, marla = ?, glocation = ?, latitude = ?, longitude = ?, eid = ?
             WHERE wid = ?
         `;
@@ -105,7 +105,7 @@ const getSalesLead = async (req, res) => {
 
         const query = ` SELECT wid, firm AS firmname, gaddress AS groweraddress, growerreference, leadtype, gcellno AS growercell, 
                         mcrates AS areakanal, marla AS areamarla, glocation AS sitelocation, latitude, longitude, CAST(tdate as date) as date, eid AS employeeId
-                        FROM subwrk3
+                        FROM subwrk3Test
                         ORDER BY tdate DESC
                         OFFSET ? ROWS
                         FETCH NEXT ? ROWS ONLY`;
@@ -116,7 +116,7 @@ const getSalesLead = async (req, res) => {
         });
 
         // Get the total count of records (for pagination info)
-        const countQuery = `SELECT COUNT(*) as totalCount FROM subwrk3`;
+        const countQuery = `SELECT COUNT(*) as totalCount FROM subwrk3Test`;
         const [totalCountResult] = await connection.query(countQuery, {
             type: connection.QueryTypes.SELECT,
         });

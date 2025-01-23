@@ -29,13 +29,18 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/saleslead', salesLeadRoutes);
 app.use('/api/growerdetails', growerRoutes);
 
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'privacypolicy.html'));
+});
+
 server.listen((8090), () => {
     connection.authenticate().then(() => {
         console.log("Connected to DB")
     }).catch((err) => {
         console.log("Error in connecting DB : ", err)
     })
-    console.log("App listening on port 8081")
+    console.log("App listening on port 8090")
 })
 
 
