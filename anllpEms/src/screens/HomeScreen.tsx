@@ -45,31 +45,16 @@ const Home: React.FC = () => {
 
   const isFocused = useIsFocused();
 
-  // const requestPermissionAndFetchLocation = async () => {
-  //   const hasPermissions = await requestPermissions();
-
-  //   if (!hasPermissions) {
-  //     Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
-  //     return;
-  //   }
-  //   setLocLading(true);
-
-  //   Geolocation.getCurrentPosition(
-  //     (position) => {
-  //       const { latitude, longitude } = position.coords;
-  //       setLocation({ latitude, longitude });
-  //       setLocLading(false);
-  //     },
-  //     (error) => {
-  //       console.error(error);
-  //       setLocLading(false);
-  //     },
-  //     { enableHighAccuracy: true, distanceFilter: 10 }
-  //   );
-  // };
-
   const requestPermissionAndFetchLocation = async () => {
     try {
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) {
+        Alert.alert(
+          'Permission Denied',
+          'Location permission is required to start tracking.',
+        );
+        return;
+      }
       // Platform-specific permission handling
       if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.request(
@@ -115,16 +100,16 @@ const Home: React.FC = () => {
             // More detailed error handling
             switch (error.code) {
               case error.PERMISSION_DENIED:
-                Alert.alert('Error', 'Location permission was denied');
+                console.log('Error', 'Location permission was denied');
                 break;
               case error.POSITION_UNAVAILABLE:
-                Alert.alert('Error', 'Location information is unavailable');
+                console.log('Error', 'Location information is unavailable');
                 break;
               case error.TIMEOUT:
-                Alert.alert('Error', 'Location request timed out');
+                console.log('Error', 'Location request timed out');
                 break;
               default:
-                Alert.alert(
+                console.log(
                   'Error',
                   'An unknown error occurred while fetching location',
                 );
@@ -134,8 +119,8 @@ const Home: React.FC = () => {
           },
           {
             enableHighAccuracy: true,
-            timeout: 7000,
-            maximumAge: 1000,
+            timeout: 20000,
+            maximumAge: 10000,
             distanceFilter: 10,
           },
         );
@@ -248,6 +233,12 @@ const Home: React.FC = () => {
         },
         (error: GeolocationError) => {
           console.error('Geolocation Error:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 10000,
+          distanceFilter: 10,
         },
       );
 
