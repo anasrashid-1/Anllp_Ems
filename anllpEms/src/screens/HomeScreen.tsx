@@ -1,20 +1,30 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import notifee, { AndroidImportance } from '@notifee/react-native';
-import Geolocation, { GeolocationError, GeolocationResponse } from '@react-native-community/geolocation';
+import notifee, {AndroidImportance} from '@notifee/react-native';
+import Geolocation, {
+  GeolocationError,
+  GeolocationResponse,
+} from '@react-native-community/geolocation';
 import messaging from '@react-native-firebase/messaging';
-import { useIsFocused } from '@react-navigation/native';
-import React, { useContext, useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
-import BackgroundService, { BackgroundTaskOptions } from 'react-native-background-actions';
+import {useIsFocused} from '@react-navigation/native';
+import React, {useContext, useEffect, useState} from 'react';
+import {
+  Alert,
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import BackgroundService, {
+  BackgroundTaskOptions,
+} from 'react-native-background-actions';
 import MapPreview from '../components/HomeScreen/MapPreview';
 import MarkAttendance from '../components/HomeScreen/MarkAttendance';
-import { AuthContext } from '../store/auth-context';
+import {AuthContext} from '../store/auth-context';
 import requestPermissions from '../util/requestPermissions';
-import { ActivityIndicator } from 'react-native-paper';
+import {ActivityIndicator} from 'react-native-paper';
 import COLORS from '../constants/colors';
-
-
 
 export interface AttendanceStatus {
   attendanceId: string;
@@ -26,43 +36,120 @@ export interface AttendanceStatus {
 }
 
 const Home: React.FC = () => {
-  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
-  const { apiUrl, token, userId } = useContext(AuthContext);
+  const [attendanceStatus, setAttendanceStatus] =
+    useState<AttendanceStatus | null>(null);
+  const {apiUrl, token, userId} = useContext(AuthContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [locLoading, setLocLading] = useState<boolean>(false);
-  const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
+  const [location, setLocation] = useState({latitude: 0, longitude: 0});
 
   const isFocused = useIsFocused();
 
+  // const requestPermissionAndFetchLocation = async () => {
+  //   const hasPermissions = await requestPermissions();
+
+  //   if (!hasPermissions) {
+  //     Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+  //     return;
+  //   }
+  //   setLocLading(true);
+
+  //   Geolocation.getCurrentPosition(
+  //     (position) => {
+  //       const { latitude, longitude } = position.coords;
+  //       setLocation({ latitude, longitude });
+  //       setLocLading(false);
+  //     },
+  //     (error) => {
+  //       console.error(error);
+  //       setLocLading(false);
+  //     },
+  //     { enableHighAccuracy: true, distanceFilter: 10 }
+  //   );
+  // };
+
   const requestPermissionAndFetchLocation = async () => {
-    const hasPermissions = await requestPermissions();
+    try {
+      // Platform-specific permission handling
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'This app needs access to your location.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
 
-    if (!hasPermissions) {
-      Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
-      return;
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission Denied',
+            'Location permission is required to start tracking.',
+          );
+          return null;
+        }
+      }
+      setLocLading(true);
+
+      // Set a timeout to prevent indefinite waiting
+      return new Promise((resolve, reject) => {
+        const locationTimeout = setTimeout(() => {
+          reject(new Error('Location fetch timed out'));
+        }, 10000); // 10 seconds timeout
+
+        Geolocation.getCurrentPosition(
+          position => {
+            setLocLading(false);
+            clearTimeout(locationTimeout);
+            const {latitude, longitude} = position.coords;
+            setLocation({latitude, longitude});
+            resolve({latitude, longitude});
+          },
+          error => {
+            setLocLading(false);
+            clearTimeout(locationTimeout);
+            console.error('Location Error:', error);
+
+            // More detailed error handling
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                Alert.alert('Error', 'Location permission was denied');
+                break;
+              case error.POSITION_UNAVAILABLE:
+                Alert.alert('Error', 'Location information is unavailable');
+                break;
+              case error.TIMEOUT:
+                Alert.alert('Error', 'Location request timed out');
+                break;
+              default:
+                Alert.alert(
+                  'Error',
+                  'An unknown error occurred while fetching location',
+                );
+            }
+
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 7000,
+            maximumAge: 1000,
+            distanceFilter: 10,
+          },
+        );
+      });
+    } catch (error) {
+      console.error('Location Fetch Error:', error);
+      Alert.alert('Error', 'Failed to fetch location');
+      return null;
     }
-    setLocLading(true);
-
-    Geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setLocation({ latitude, longitude });
-        setLocLading(false);
-      },
-      (error) => {
-        console.error(error);
-        setLocLading(false);
-      },
-      { enableHighAccuracy: true, distanceFilter: 10 }
-    );
   };
-
   useEffect(() => {
     requestPermissionAndFetchLocation();
     fetchAttendanceStatus();
   }, [isFocused]);
-
-
 
   const displayNotification = async (title: string, body: string) => {
     const channelId = await notifee.createChannel({
@@ -86,8 +173,7 @@ const Home: React.FC = () => {
   };
 
   const handleForegroundNotifications = () => {
-    messaging().onMessage(async (remoteMessage) => {
-
+    messaging().onMessage(async remoteMessage => {
       const title = remoteMessage.notification?.title || 'New Notification';
       const body = remoteMessage.notification?.body || 'You have a new message';
 
@@ -95,9 +181,11 @@ const Home: React.FC = () => {
     });
   };
 
-
   // Post coordinates to the server
-  const logLocation = async (latitude: number, longitude: number): Promise<void> => {
+  const logLocation = async (
+    latitude: number,
+    longitude: number,
+  ): Promise<void> => {
     if (!attendanceStatus?.attendanceId) {
       console.warn('Attendance ID is not available.');
       return;
@@ -125,15 +213,21 @@ const Home: React.FC = () => {
       }
     } catch (error) {
       console.error('Attendance Logging Error:', error);
-      Alert.alert('Error', 'Failed to connect to the server. Please try again later.');
+      Alert.alert(
+        'Error',
+        'Failed to connect to the server. Please try again later.',
+      );
     }
   };
 
   // Sleep function for delays in background task
-  const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
+  const sleep = (time: number): Promise<void> =>
+    new Promise(resolve => setTimeout(resolve, time));
 
   // The background task that runs in a loop
-  const trackLocationInBackground = async (taskDataArguments?: { delay: number }): Promise<void> => {
+  const trackLocationInBackground = async (taskDataArguments?: {
+    delay: number;
+  }): Promise<void> => {
     const delay = taskDataArguments?.delay || 1800000;
 
     await BackgroundService.updateNotification({
@@ -149,7 +243,7 @@ const Home: React.FC = () => {
     while (BackgroundService.isRunning()) {
       Geolocation.getCurrentPosition(
         async (position: GeolocationResponse) => {
-          const { latitude, longitude } = position.coords;
+          const {latitude, longitude} = position.coords;
           await logLocation(latitude, longitude);
         },
         (error: GeolocationError) => {
@@ -208,9 +302,11 @@ const Home: React.FC = () => {
 
   // Start background location tracking
   const startBackgroundTracking = async (): Promise<void> => {
-
     try {
-      await BackgroundService.start(trackLocationInBackground, backgroundTaskOptions);
+      await BackgroundService.start(
+        trackLocationInBackground,
+        backgroundTaskOptions,
+      );
       console.log('Background tracking started');
     } catch (error) {
       console.error('Error starting background tracking:', error);
@@ -221,7 +317,10 @@ const Home: React.FC = () => {
   // Stop background location tracking
   const stopBackgroundTracking = async (): Promise<void> => {
     if (!location.latitude) {
-      Alert.alert('Permission Denied', 'Not able to track your location.\nPlease tur on location to continue.');
+      Alert.alert(
+        'Permission Denied',
+        'Not able to track your location.\nPlease tur on location to continue.',
+      );
       return;
     }
     try {
@@ -241,7 +340,6 @@ const Home: React.FC = () => {
       setAttendanceStatus(null);
       await fetchAttendanceStatus();
       await BackgroundService.stop();
-
     } catch (error) {
       console.error('Error stopping background tracking:', error);
     }
@@ -251,11 +349,17 @@ const Home: React.FC = () => {
   const handleCheckIn = async (): Promise<void> => {
     const hasPermissions = await requestPermissions();
     if (!hasPermissions) {
-      Alert.alert('Permission Denied', 'Location permission is required to start tracking.');
+      Alert.alert(
+        'Permission Denied',
+        'Location permission is required to start tracking.',
+      );
       return;
     }
     if (!location.latitude) {
-      Alert.alert('Permission Denied', 'Not able to track your location.\nPlease tur on location to continue.');
+      Alert.alert(
+        'Permission Denied',
+        'Not able to track your location.\nPlease tur on location to continue.',
+      );
       return;
     }
 
@@ -280,12 +384,13 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    if (attendanceStatus?.status === 'Active' && !BackgroundService.isRunning()) {
-
+    if (
+      attendanceStatus?.status === 'Active' &&
+      !BackgroundService.isRunning()
+    ) {
       startBackgroundTracking();
     }
   }, [attendanceStatus]);
-
 
   const fetchMessagingToken = async (): Promise<void> => {
     try {
@@ -297,13 +402,12 @@ const Home: React.FC = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messagingToken: fcmtoken }),
+        body: JSON.stringify({messagingToken: fcmtoken}),
       });
     } catch (error) {
       console.error('Error fetching messaging token:', error);
     }
   };
-
 
   const requestNotificationPermissions = async (): Promise<void> => {
     const authStatus = await messaging().requestPermission();
@@ -324,33 +428,45 @@ const Home: React.FC = () => {
     handleForegroundNotifications();
 
     // Optional: Handle token refresh
-    const unsubscribe = messaging().onTokenRefresh((fcmtoken) => {
-
+    const unsubscribe = messaging().onTokenRefresh(fcmtoken => {
       fetch(`${apiUrl}/user/token`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messagingToken: fcmtoken }),
+        body: JSON.stringify({messagingToken: fcmtoken}),
       });
     });
 
     return unsubscribe;
   }, []);
 
-
   if (loading || locLoading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={COLORS.DARK_GRAY} />
-        <Text style={{ marginTop: 15, textAlign: 'center', color: COLORS.DARK_GRAY }}>Fetching location ...</Text>
+        <Text
+          style={{marginTop: 15, textAlign: 'center', color: COLORS.DARK_GRAY}}>
+          Fetching location ...
+        </Text>
+        <Text
+          style={{
+            marginTop: 10,
+            textAlign: 'center',
+            color: COLORS.ACCENT_ORANGE,
+            paddingHorizontal: 20,
+          }}>
+          ⚠️ Please ensure the following permissions are granted:
+          {'\n'}📍 Location Access (to determine your current location)
+          {'\n'}🌐 Internet Access (to fetch map and location data)
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{flex: 1}}>
       <MapPreview location={location} />
       <MarkAttendance
         handleCheckIn={handleCheckIn}
@@ -371,6 +487,4 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: 'center',
   },
-
 });
-
