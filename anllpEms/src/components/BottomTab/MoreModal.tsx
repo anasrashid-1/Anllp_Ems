@@ -33,11 +33,11 @@ const MoreModal: React.FC<MoreModalProps> = ({ isModalVisible, toggleModal }) =>
               <Tab icon="ChartBarIcon" name="Grower Details" route="Grower Details" toggleModal={toggleModal} />
             </View>
             {/* Row 2 */}
-            <Text  style={styles.adminRoutes} >Admin Routes</Text>
+            {rbac(Number(userId))&& <Text  style={styles.adminRoutes} >Admin Routes</Text>}
             <View style={styles.row}>
-              {rbac(userId) && <Tab icon="UserGroupIcon" name="Expenses" route="Daily Expense Admin" toggleModal={toggleModal} />}
-              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Leaves" route="Leave Requests" toggleModal={toggleModal} />}
-              {rbac(userId) && <Tab icon="ClipboardDocumentListIcon" name="Attendance" route="Attendance Admin" toggleModal={toggleModal} />}
+              {rbac(Number(userId)) && <Tab icon="UserGroupIcon" name="Expenses" route="Daily Expense Admin" toggleModal={toggleModal} />}
+              {rbac(Number(userId)) && <Tab icon="ClipboardDocumentListIcon" name="Leaves" route="Leave Requests" toggleModal={toggleModal} />}
+              {rbac(Number(userId)) && <Tab icon="ClipboardDocumentListIcon" name="Attendance" route="Attendance Admin" toggleModal={toggleModal} />}
             </View>
 
           </View>

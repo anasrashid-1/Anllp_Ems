@@ -24,7 +24,8 @@ export type BottomTabParamList = {
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const BottomNavigator = () => {
     const { userName } = useContext(AuthContext)
-    const greeting = getGreeting(userName);
+    // const greeting = getGreeting(userName);
+    const greeting = getGreeting(userName ?? "");
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
     // Toggle modal visibility
@@ -78,7 +79,7 @@ const BottomNavigator = () => {
                                             navigation.navigate("Notifications");
                                         }}
                                     />
-                                    <Text style={styles.ntfText}>1</Text>
+                                    <Text style={styles.ntfText}>0</Text>
                                 </View>
 
                                 <View style={styles.headerIconCont}>

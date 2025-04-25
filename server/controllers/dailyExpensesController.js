@@ -122,7 +122,7 @@ const getDailyExpenses = async (req, res) => {
         if (data.length > 0) {
             data.forEach(item => {
                 if (item.expenseImg) {
-                    item.image = `${req.protocol}://${req.get('host')}/images/${item.expenseImg}`;
+                    item.image = `${req.protocol}s://${req.get('host')}/images/${item.expenseImg}`;
                     //item.image = `https://468fsrq8-8080.inc1.devtunnels.ms/images/${item.expenseImg}`;  //tunnel url for testing
                     // item.image = `https://468fsrq8-8090.inc1.devtunnels.ms//images/${item.expenseImg}`;  //tunnel url for testing
                     delete item.expenseImg;
