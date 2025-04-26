@@ -126,15 +126,15 @@ const LoginScreen: React.FC = () => {
             <Text style={[styles.forgotPasswordText,
             isAuthenticating && styles.disabledText,
             ]}>
-              Forgot your password?
+              Forgot your password??
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            disabled={isAuthenticating}
-            style={[
-              styles.button,
-              isAuthenticating && styles.authenticatingButton,
-            ]}
+             disabled={isAuthenticating || !employeeId || !password}
+             style={[
+               styles.button,
+               (isAuthenticating || !employeeId || !password) && styles.authenticatingButton,
+             ]}
             onPress={() => handleLogin(employeeId, password)}
           >
             {isAuthenticating ? (

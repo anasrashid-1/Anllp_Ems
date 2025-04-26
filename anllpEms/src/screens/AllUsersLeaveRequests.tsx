@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
-import { Button, Divider, ActivityIndicator } from 'react-native-paper';
-import { UserCircleIcon } from 'react-native-heroicons/solid';
-import { Dropdown } from "react-native-element-dropdown";
+import React, {useCallback, useContext, useEffect, useState} from 'react';
+import {View, FlatList, Text, StyleSheet} from 'react-native';
+import {Button, Divider, ActivityIndicator} from 'react-native-paper';
+import {UserCircleIcon} from 'react-native-heroicons/solid';
+import {Dropdown} from 'react-native-element-dropdown';
 import COLORS from '../constants/colors';
-import { AuthContext } from '../store/auth-context';
+import {AuthContext} from '../store/auth-context';
 import DialogComp from '../components/DialogComp';
 
 interface LeaveRequest {
@@ -33,29 +33,32 @@ interface DialogState {
 const LeaveRequests: React.FC = () => {
   const useCtx = useContext(AuthContext);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [filteredLeaveRequests, setFilteredLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [filteredLeaveRequests, setFilteredLeaveRequests] = useState<
+    LeaveRequest[]
+  >([]);
 
   const [loading, setLoading] = useState(true);
 
   const [dialogState, setDialogState] = useState<DialogState>({
     dialogVisible: false,
-    dialogIcon: "",
-    dialogMessage: "",
+    dialogIcon: '',
+    dialogMessage: '',
   });
 
-
   const [uniqueuserNames, setUniqueUserNames] = useState<LeaveRequest[]>([]);
-  const [selectedUniqueUserName, setSelectedUniqueUserName] = useState<string>("");
+  const [selectedUniqueUserName, setSelectedUniqueUserName] =
+    useState<string>('');
 
   const filterRequestList = (userName: string) => {
-    const filteredRequests = leaveRequests.filter(item => item.userName === userName);
+    const filteredRequests = leaveRequests.filter(
+      item => item.userName === userName,
+    );
     setFilteredLeaveRequests(filteredRequests);
   };
 
-  const fetchLeaveRequests = async () => {
+  const fetchLeaveRequests = useCallback(async () => {
     try {
       setLoading(true);
-
       const response = await fetch(`${useCtx.apiUrl}/leaves/get`, {
         method: 'GET',
         headers: {
@@ -70,12 +73,18 @@ const LeaveRequests: React.FC = () => {
         if (data.length > 0) {
           setLeaveRequests(data);
           setFilteredLeaveRequests(data);
-          const uniqueUserNames = data.reduce((acc: LeaveRequest[], current: LeaveRequest) => {
-            if (current.userName && !acc.some(item => item.userName === current.userName)) {
-              acc.push(current);
-            }
-            return acc;
-          }, []);
+          const uniqueUserNames = data.reduce(
+            (acc: LeaveRequest[], current: LeaveRequest) => {
+              if (
+                current.userName &&
+                !acc.some(item => item.userName === current.userName)
+              ) {
+                acc.push(current);
+              }
+              return acc;
+            },
+            [],
+          );
           setUniqueUserNames(uniqueUserNames);
         }
       } else {
@@ -86,36 +95,63 @@ const LeaveRequests: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [useCtx.apiUrl, useCtx.token]);
 
-  const renderItem = ({ item }: { item: LeaveRequest }) => {
+  const renderItem = ({item}: {item: LeaveRequest}) => {
     const startDate = new Date(item.StartDate);
     const endDate = new Date(item.EndDate);
-    const daysRequested = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const formattedDateRange = `${startDate.getDate()} ${startDate.toLocaleString('en-US', { month: 'short' })} - ${endDate.getDate()} ${endDate.toLocaleString('en-US', { month: 'short' })}`;
+    const daysRequested =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
+    const formattedDateRange = `${startDate.getDate()} ${startDate.toLocaleString(
+      'en-US',
+      {month: 'short'},
+    )} - ${endDate.getDate()} ${endDate.toLocaleString('en-US', {
+      month: 'short',
+    })}`;
     const requestedAt = new Date(item.RequestedAt);
-    const requestedDay = `${requestedAt.getDay()} ${requestedAt.toLocaleString('en-US', { month: 'short' })}`;
+    const requestedDay = `${requestedAt.getDay()} ${requestedAt.toLocaleString(
+      'en-US',
+      {month: 'short'},
+    )}`;
 
     const ApprovedAt = new Date(item.ApprovedAt);
     const RejectedAt = new Date(item.RejectedAt);
-    const formattedStatusSate = item.Status === 'Approved'
-      ? `${ApprovedAt.getDate()} ${ApprovedAt.toLocaleString('en-US', { month: 'short' })}`
-      : `${RejectedAt.getDate()} ${RejectedAt.toLocaleString('en-US', { month: 'short' })}`;
+    const formattedStatusSate =
+      item.Status === 'Approved'
+        ? `${ApprovedAt.getDate()} ${ApprovedAt.toLocaleString('en-US', {
+            month: 'short',
+          })}`
+        : `${RejectedAt.getDate()} ${RejectedAt.toLocaleString('en-US', {
+            month: 'short',
+          })}`;
 
-
-    const handleAction = async (LeaveId: number, applicantUserId: number, action: string) => {
+    const handleAction = async (
+      LeaveId: number,
+      applicantUserId: number,
+      action: string,
+    ) => {
       try {
-        const response = await fetch(`${useCtx.apiUrl}/leaves/update/${action}/${LeaveId}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${useCtx.token}`,
-            'Content-Type': 'application/json',
+        const response = await fetch(
+          `${useCtx.apiUrl}/leaves/update/${action}/${LeaveId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${useCtx.token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({applicantUserId}),
           },
-          body: JSON.stringify({ applicantUserId }),
-        });
+        );
 
         if (response.ok) {
-          showDialog(`Request ${action === 'Approved' ? 'approved' : 'rejected'} successfully!`, 'check-circle');
+          showDialog(
+            `Request ${
+              action === 'Approved' ? 'approved' : 'rejected'
+            } successfully!`,
+            'check-circle',
+          );
           fetchLeaveRequests();
         } else {
           showDialog('Failed to update the request', 'alert');
@@ -125,10 +161,12 @@ const LeaveRequests: React.FC = () => {
       }
     };
 
-    const statusStyles: { [key: string]: { backgroundColor: string; color: string } } = {
-      Pending: { backgroundColor: 'orange', color: 'white' },
-      Approved: { backgroundColor: 'green', color: 'white' },
-      Rejected: { backgroundColor: 'red', color: 'white' },
+    const statusStyles: {
+      [key: string]: {backgroundColor: string; color: string};
+    } = {
+      Pending: {backgroundColor: 'orange', color: 'white'},
+      Approved: {backgroundColor: 'green', color: 'white'},
+      Rejected: {backgroundColor: 'red', color: 'white'},
     };
 
     return (
@@ -136,15 +174,19 @@ const LeaveRequests: React.FC = () => {
         {/* Row 1 */}
         <Text style={styles.sectionTitle}>{item.LeaveType}</Text>
         <Text style={styles.sectionText}>{item.Reason}</Text>
-        <Text style={styles.sectionText}>{daysRequested} Days ● {formattedDateRange}</Text>
-        <Text style={[styles.sectionText, { marginTop: 6 }]}>Requested on : {requestedDay}</Text>
+        <Text style={styles.sectionText}>
+          {daysRequested} Days ● {formattedDateRange}
+        </Text>
+        <Text style={[styles.sectionText, {marginTop: 6}]}>
+          Requested on : {requestedDay}
+        </Text>
         <Divider style={styles.divider} />
 
         {/* Row 2 */}
         <View style={styles.row}>
           <View style={styles.employeeDetailsContainer}>
             <View>
-              <UserCircleIcon size={40} color='grey' />
+              <UserCircleIcon size={40} color="grey" />
             </View>
             <View>
               <Text style={styles.sectionText}>{item.userName}</Text>
@@ -165,16 +207,18 @@ const LeaveRequests: React.FC = () => {
           <View style={styles.buttonContainer}>
             <Button
               mode="contained"
-              onPress={() => handleAction(item.LeaveId, item.UserId, 'Approved')}
-              style={[styles.actionButton, styles.approveButton]}
-            >
+              onPress={() =>
+                handleAction(item.LeaveId, item.UserId, 'Approved')
+              }
+              style={[styles.actionButton, styles.approveButton]}>
               Approve
             </Button>
             <Button
               mode="contained"
-              onPress={() => handleAction(item.LeaveId, item.UserId, 'Rejected')}
-              style={[styles.actionButton, styles.rejectButton]}
-            >
+              onPress={() =>
+                handleAction(item.LeaveId, item.UserId, 'Rejected')
+              }
+              style={[styles.actionButton, styles.rejectButton]}>
               Reject
             </Button>
           </View>
@@ -182,10 +226,16 @@ const LeaveRequests: React.FC = () => {
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: statusStyles[item.Status]?.backgroundColor || 'gray' },
-            ]}
-          >
-            <Text style={{ color: statusStyles[item.Status]?.color || 'black', fontWeight: 'bold' }}>
+              {
+                backgroundColor:
+                  statusStyles[item.Status]?.backgroundColor || 'gray',
+              },
+            ]}>
+            <Text
+              style={{
+                color: statusStyles[item.Status]?.color || 'black',
+                fontWeight: 'bold',
+              }}>
               {item.Status} on {formattedStatusSate}
             </Text>
           </View>
@@ -204,15 +254,20 @@ const LeaveRequests: React.FC = () => {
 
   useEffect(() => {
     fetchLeaveRequests();
-  }, []);
+  }, [fetchLeaveRequests]);
 
   return (
     <View style={styles.screenContainer}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator animating={true} size="large" color={COLORS.DARK_GRAY} />
+          <ActivityIndicator
+            animating={true}
+            size="large"
+            color={COLORS.DARK_GRAY}
+          />
         </View>
-      ) : filteredLeaveRequests.length > 0 && filteredLeaveRequests[0].LeaveId !== null ? (
+      ) : filteredLeaveRequests.length > 0 &&
+        filteredLeaveRequests[0].LeaveId !== null ? (
         <View>
           <View style={styles.dropdownContainer}>
             <Dropdown
@@ -227,7 +282,7 @@ const LeaveRequests: React.FC = () => {
               valueField="userName"
               placeholder="Filter"
               value={selectedUniqueUserName}
-              onChange={(item) => {
+              onChange={item => {
                 setSelectedUniqueUserName(item.userName);
                 filterRequestList(item.userName);
               }}
@@ -237,7 +292,7 @@ const LeaveRequests: React.FC = () => {
           <View style={styles.cardsContainer}>
             <FlatList
               data={filteredLeaveRequests}
-              keyExtractor={(item) => item.LeaveId.toString()}
+              keyExtractor={item => item.LeaveId.toString()}
               renderItem={renderItem}
               contentContainerStyle={styles.listContainer}
             />
@@ -248,7 +303,6 @@ const LeaveRequests: React.FC = () => {
           <Text style={styles.emptyText}>No leave requests found. ✨</Text>
         </View>
       )}
-
 
       {/* for dialog */}
       <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
@@ -274,7 +328,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     marginVertical: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 3.5,
     elevation: 4,
@@ -287,7 +341,7 @@ const styles = StyleSheet.create({
   employeeDetailsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 10,
   },
   sectionTitle: {
     fontSize: 18,
@@ -338,11 +392,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-
   // for dropdown
   dropdownContainer: {
-
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   dropdown: {
     height: 50,
@@ -351,7 +403,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     //   borderWidth: 1 / 6,
-
   },
   selectedTextStyle: {
     color: 'gray',
@@ -375,8 +426,7 @@ const styles = StyleSheet.create({
   dialog: {
     backgroundColor: 'white',
     borderRadius: 8,
-  }
-
+  },
 });
 
 export default LeaveRequests;
