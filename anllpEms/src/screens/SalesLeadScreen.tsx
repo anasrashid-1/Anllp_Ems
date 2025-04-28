@@ -25,6 +25,8 @@ type NavigationProp = NativeStackNavigationProp<
 
 type RootStackParamList = {
   'Add Sales Lead': {rowData: SalesLeadData};
+  'Add Followup': {salesLead: SalesLeadData};
+  'FollowupHistory': {salesLead: SalesLeadData};
 };
 
 const SalesLeadScreen: React.FC = () => {
@@ -85,7 +87,7 @@ const SalesLeadScreen: React.FC = () => {
 
   useEffect(() => {
     fetchSalesLeads(1);
-  }, [authCtx.apiUrl, authCtx.token, isFocused]);
+  }, [authCtx.apiUrl, authCtx.token, authCtx.userId, isFocused]);
 
   const tableHead = [
     'Firm Name',
@@ -95,6 +97,7 @@ const SalesLeadScreen: React.FC = () => {
     'Phone',
     'Site Location',
     'Action',
+    'Followups',
   ];
 
   const tableData = salesLeads.map(lead => [
@@ -118,6 +121,11 @@ const SalesLeadScreen: React.FC = () => {
     }
   };
 
+  // Add the navigation handler
+  const handleFollowupPress = (rowData: SalesLeadData) => {
+    navigation.navigate('FollowupHistory', {salesLead: rowData});
+  };
+
   return (
     <View style={styles.container}>
       {/* <Text style={styles.title}>Sales Leads</Text> */}
@@ -126,37 +134,40 @@ const SalesLeadScreen: React.FC = () => {
         <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
       ) : (
         <View style={styles.tableContainer}>
-          <ScrollView horizontal>
-            <View>
-              {/* Sticky Header */}
-              <View style={styles.stickyHeaderContainer}>
-                <Table
-                  borderStyle={{borderWidth: 2, borderColor: COLORS.DARK_GRAY}}>
-                  <Row
-                    data={tableHead}
-                    style={styles.header}
-                    textStyle={styles.headerText}
-                    widthArr={Array(tableHead.length).fill(150)}
-                  />
-                </Table>
-              </View>
+          {salesLeads.length > 0 ? (
+            <ScrollView horizontal>
+              <View>
+                {/* Sticky Header */}
+                <View style={styles.stickyHeaderContainer}>
+                  <Table
+                    borderStyle={{
+                      borderWidth: 2,
+                      borderColor: COLORS.DARK_GRAY,
+                    }}>
+                    <Row
+                      data={tableHead}
+                      style={styles.header}
+                      textStyle={styles.headerText}
+                      widthArr={Array(tableHead.length).fill(150)}
+                    />
+                  </Table>
+                </View>
 
-              {/* Scrollable Content */}
-              <ScrollView
-                style={styles.dataContainer}
-                onScroll={({nativeEvent}) => {
-                  const {layoutMeasurement, contentOffset, contentSize} =
-                    nativeEvent;
-                  const isBottom =
-                    layoutMeasurement.height + contentOffset.y >=
-                    contentSize.height - 20;
-                  if (isBottom) {
-                    handleLoadMore();
-                  }
-                }}
-                scrollEventThrottle={16}>
-                {tableData.length > 0 ? (
-                  tableData.map((rowData, rowIndex) => (
+                {/* Scrollable Content */}
+                <ScrollView
+                  style={styles.dataContainer}
+                  onScroll={({nativeEvent}) => {
+                    const {layoutMeasurement, contentOffset, contentSize} =
+                      nativeEvent;
+                    const isBottom =
+                      layoutMeasurement.height + contentOffset.y >=
+                      contentSize.height - 20;
+                    if (isBottom) {
+                      handleLoadMore();
+                    }
+                  }}
+                  scrollEventThrottle={16}>
+                  {tableData.map((rowData, rowIndex) => (
                     <View key={rowIndex} style={styles.row}>
                       {rowData.map((value, cellIndex) => (
                         <View
@@ -179,23 +190,35 @@ const SalesLeadScreen: React.FC = () => {
                           <Text style={styles.buttonText}>Edit</Text>
                         </TouchableOpacity>
                       </View>
+                      <View style={[styles.cell, {width: 150}]}>
+                        <TouchableOpacity
+                          style={[
+                            styles.button,
+                            {backgroundColor: COLORS.ACCENT_ORANGE},
+                          ]}
+                          onPress={() =>
+                            handleFollowupPress(salesLeads[rowIndex])
+                          }>
+                          <Text style={styles.buttonText}>View</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  ))
-                ) : (
-                  <Text style={styles.placeholderText}>
-                    🚀 No sales data available yet. Please add some sales leads
-                    to get started.
-                  </Text>
-                )}
-                {isFetchingMore && (
-                  <ActivityIndicator
-                    size="small"
-                    color={COLORS.ACCENT_ORANGE}
-                  />
-                )}
-              </ScrollView>
-            </View>
-          </ScrollView>
+                  ))}
+                  {isFetchingMore && (
+                    <ActivityIndicator
+                      size="small"
+                      color={COLORS.ACCENT_ORANGE}
+                    />
+                  )}
+                </ScrollView>
+              </View>
+            </ScrollView>
+          ) : (
+            <Text style={styles.placeholderText}>
+              🚀 No sales data available yet. Please add some sales leads to get
+              started.
+            </Text>
+          )}
         </View>
       )}
     </View>

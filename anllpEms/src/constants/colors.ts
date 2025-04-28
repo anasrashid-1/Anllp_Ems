@@ -1,11 +1,10 @@
-
 export const COLORS = {
   // Primary and Accent Colors
   PRIMARY_GREEN: '#2e7d32', // Dark Green from the logo
   ACCENT_ORANGE: '#ff9800', // Orange from the logo
 
   // Neutral Colors
-  SEMI_GRAY: "rgba(200, 200, 200, 0.4)",
+  SEMI_GRAY: 'rgba(200, 200, 200, 0.4)',
   LIGHT_GRAY: '#f5f5f5',
   MEDIUM_GRAY: '#9e9e9e',
   DARK_GRAY: '#636363',
@@ -18,4 +17,4 @@ export const COLORS = {
   PRIMARY_RED: 'red',
 };
 
-export default COLORS;
+export default COLORS;
