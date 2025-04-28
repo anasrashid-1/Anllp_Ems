@@ -141,4 +141,172 @@ const getSalesLead = async (req, res) => {
     }
 }
 
-module.exports = {postSalesLead, putSalesLead, getSalesLead}
+const postSalesLeadFollowUp = async (req, res) => {
+    const userId = req.userId; // Logged-in user's ID
+    try {
+        const {
+            salesLeadId,
+            salespersonName,
+            customerName,
+            dateOfFollowUp,
+            followUpType,
+            discussionSummary,
+            customerInterestLevel,
+            nextSteps,
+            nextFollowUpDate,
+            orderPotential,
+            problemsOrObjections
+        } = req.body;
+
+        // Validate required fields
+        if (
+            !salesLeadId || 
+            !salespersonName || 
+            !customerName || 
+            !dateOfFollowUp || 
+            !followUpType || 
+            !customerInterestLevel
+        ) {
+            return res.status(400).json({ message: "Missing required fields." });
+        }
+
+        // Insert query
+        const query = `
+            INSERT INTO salesLeadFollowUpsTest (
+                salesLeadId,
+                salespersonName,
+                salespersonId,
+                customerName,
+                dateOfFollowUp,
+                followUpType,
+                discussionSummary,
+                customerInterestLevel,
+                nextSteps,
+                nextFollowUpDate,
+                orderPotential,
+                problemsOrObjections,
+                createdAt
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+        `;
+
+        const result = await connection.query(query, {
+            replacements: [
+                salesLeadId,
+                salespersonName,
+                userId,
+                customerName,
+                dateOfFollowUp,
+                followUpType,
+                discussionSummary || null,
+                customerInterestLevel,
+                nextSteps || null,
+                nextFollowUpDate || null,
+                orderPotential || null,
+                problemsOrObjections || null
+            ],
+            type: connection.QueryTypes.INSERT,
+        });
+
+        if (result[1] > 0) {
+            return res.json({ message: "Follow-up submitted successfully." });
+        } else {
+            return res.status(500).json({ message: "Follow-up submission failed." });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(400).json({
+            isError: true,
+            error: error.message,
+        });
+    }
+};
+
+const getSalesLeadFollowUps = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const salesLeadId = req.query.salesLeadId; // Get salesLeadId from query if present
+
+        if (page < 1 || limit < 1) {
+            return res.status(400).json({
+                isError: true,
+                error: "Page and limit must be positive integers.",
+            });
+        }
+
+        let whereClause = "";
+        let replacements = [offset, limit];
+
+        if (salesLeadId) {
+            whereClause = "WHERE salesLeadId = ?";
+            replacements = [salesLeadId, offset, limit];
+        }
+
+        const query = `
+            SELECT 
+                followUpId,
+                salesLeadId,
+                salespersonName,
+                salespersonId,
+                customerName,
+                CAST(dateOfFollowUp AS date) AS dateOfFollowUp,
+                followUpType,
+                discussionSummary,
+                customerInterestLevel,
+                nextSteps,
+                CAST(nextFollowUpDate AS date) AS nextFollowUpDate,
+                orderPotential,
+                problemsOrObjections,
+                CAST(createdAt AS datetime) AS createdAt
+            FROM salesLeadFollowUpsTest
+            ${whereClause}
+            ORDER BY createdAt DESC
+            OFFSET ? ROWS
+            FETCH NEXT ? ROWS ONLY
+        `;
+
+        const data = await connection.query(query, {
+            replacements,
+            type: connection.QueryTypes.SELECT,
+        });
+
+        // Count query
+        let countQuery = `SELECT COUNT(*) as totalCount FROM salesLeadFollowUpsTest`;
+        let countReplacements = [];
+
+        if (salesLeadId) {
+            countQuery += ` WHERE salesLeadId = ?`;
+            countReplacements.push(salesLeadId);
+        }
+
+        const [totalCountResult] = await connection.query(countQuery, {
+            replacements: countReplacements,
+            type: connection.QueryTypes.SELECT,
+        });
+
+        const totalCount = totalCountResult.totalCount;
+
+        res.status(200).json({
+            isError: false,
+            data,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+                totalPages: Math.ceil(totalCount / limit),
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({
+            isError: true,
+            error: error.message,
+        });
+    }
+};
+
+
+
+module.exports = {postSalesLead, putSalesLead, getSalesLead, postSalesLeadFollowUp, getSalesLeadFollowUps}

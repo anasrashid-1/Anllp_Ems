@@ -231,3 +231,22 @@ CREATE TABLE employeeDailyExpenses (
     rejectedAt DATETIME NULL,
 	rejectionReason NVARCHAR(255) NULL,
 );
+
+
+
+CREATE TABLE salesLeadFollowUps(
+    followUpId INT IDENTITY(1,1) PRIMARY KEY,
+    salesLeadId NUMERIC(18,0) NOT NULL,
+    salespersonName NVARCHAR(255) NOT NULL,
+    salespersonId INT REFERENCES appUsers(userID),
+    customerName NVARCHAR(255) NOT NULL,
+    dateOfFollowUp DATE NOT NULL,
+    followUpType NVARCHAR(50) NOT NULL,         -- Call, Visit, Email, Message
+    discussionSummary NVARCHAR(MAX) NULL,
+    customerInterestLevel NVARCHAR(20) NOT NULL, -- High, Medium, Low
+    nextSteps NVARCHAR(MAX) NULL,                -- (added based on your form)
+    nextFollowUpDate DATE NULL,
+    orderPotential NVARCHAR(50) NULL,            -- Small, Medium, Large, Bulk Inquiry
+    problemsOrObjections NVARCHAR(MAX) NULL,
+    createdAt DATETIME DEFAULT GETDATE()
+);
