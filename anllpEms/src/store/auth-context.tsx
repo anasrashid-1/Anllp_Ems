@@ -46,6 +46,8 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
     AsyncStorage.setItem('userDetails', JSON.stringify(data))
       .then(() => {
         console.log('User details saved successfully');
+        console.log(authToken, "authToken");
+        console.log(userId, "userId");
       })
       .catch((error) => {
         console.error('Error saving user details:', error);

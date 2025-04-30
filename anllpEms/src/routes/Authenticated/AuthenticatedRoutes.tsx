@@ -82,7 +82,30 @@ const AuthenticatedRoutes = () => {
           ),
         }}
       />
-      <Stack.Screen name="FollowupHistory" component={FollowupHistoryScreen}   />
+      <Stack.Screen
+        name="FollowupHistory"
+        component={FollowupHistoryScreen}
+        options={({navigation, route}) => ({
+          tabBarIcon: ({color, size}) => (
+            <CalendarIcon size={size} color={color} />
+          ),
+          headerRight: () => (
+            <View style={{marginRight: 12}}>
+              <PlusIcon
+                size={28}
+                color="white"
+                onPress={() => {
+                  const {salesLead} = route.params || {};
+                  if (salesLead) {
+                    navigation.navigate('Add Followup', {salesLead});
+                  }
+                }}
+              />
+            </View>
+          ),
+        })}
+      />
+
       <Stack.Screen name="Add Followup" component={AddFollowupScreen} />
       <Stack.Screen
         name="Daily Expenses"
