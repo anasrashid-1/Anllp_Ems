@@ -458,7 +458,10 @@ const Home: React.FC = () => {
 
   return (
     <View style={{flex: 1}}>
-      <MapPreview location={location} />
+      <MapPreview
+        location={location}
+        onRequestLocation={requestPermissionAndFetchLocation}
+      />
       <MarkAttendance
         handleCheckIn={handleCheckIn}
         stopTracking={stopBackgroundTracking}
