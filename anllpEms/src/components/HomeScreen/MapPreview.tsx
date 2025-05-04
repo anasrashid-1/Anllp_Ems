@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   StyleSheet,
   Text,
@@ -19,6 +19,10 @@ export default function MapPreview({location, onRequestLocation}: any) {
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const [isLocationValid, setIsLocationValid] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const [locationServicesEnabled, setLocationServicesEnabled] = useState(true);
+  const checkInterval = useRef<NodeJS.Timeout>();
+  // Add a ref to track if dialog is showing
+const isDialogShowing = useRef(false);
 
   // Check location validity
   useEffect(() => {
@@ -42,6 +46,81 @@ export default function MapPreview({location, onRequestLocation}: any) {
       });
     }
   }, [location, hasPermission]);
+
+  // Check location services status (Android only)
+  const checkLocationServices = async () => {
+    if (Platform.OS === 'android' && !isDialogShowing.current) {
+      try {
+        isDialogShowing.current = true;
+        const enabled =
+          await LocationServicesDialogBox.checkLocationServicesIsEnabled({
+            message: `<font color=${COLORS.DARK_GRAY}>This app requires location services to be enabled</font>`,
+            ok: 'ENABLE',
+            cancel: 'CANCEL',
+            enableHighAccuracy: true,
+            showDialog: true,
+            style: {
+              backgroundColor: COLORS.WHITE,
+              positiveButtonTextColor: COLORS.ACCENT_ORANGE,
+              positiveButtonBackgroundColor: COLORS.WHITE,
+              negativeButtonTextColor: COLORS.DARK_GRAY,
+              negativeButtonBackgroundColor: COLORS.WHITE,
+            },
+          });
+        setLocationServicesEnabled(enabled);
+        return enabled;
+      } catch (error) {
+        console.log('Location services check error:', error);
+        setLocationServicesEnabled(false);
+        return false;
+      }
+      finally{
+        isDialogShowing.current = false;
+      }
+    }
+    return true; // For iOS, assume enabled
+  };
+
+  // Continuous location services monitoring
+  useEffect(() => {
+    if (hasPermission) {
+      // Check immediately
+      checkLocationServices();
+
+      // Then check every 10 seconds
+      checkInterval.current = setInterval(() => {
+        checkLocationServices();
+      }, 10000);
+
+      return () => {
+        if (checkInterval.current) {
+          clearInterval(checkInterval.current);
+        }
+      };
+    }
+  }, [hasPermission]);
+
+  // Handle app state changes
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      async nextAppState => {
+        console.log('App state changed to:', nextAppState);
+
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === 'active'
+        ) {
+          console.log('App returned to foreground - rechecking permissions');
+          await checkPermissions();
+        }
+
+        appState.current = nextAppState;
+      },
+    );
+
+    return () => subscription.remove();
+  }, []);
 
   // Check permissions on mount and when app returns from background
   useEffect(() => {
@@ -93,8 +172,9 @@ export default function MapPreview({location, onRequestLocation}: any) {
       setLocationError('');
 
       // 1. First check/enable location services (Android only)
-      if (Platform.OS === 'android') {
+      if (Platform.OS === 'android' && !isDialogShowing.current) {
         console.log('Checking Android location services');
+        isDialogShowing.current = true;
         await LocationServicesDialogBox.checkLocationServicesIsEnabled({
           message: `<font color=${COLORS.DARK_GRAY}>Want to use location services?</font>`,
           ok: 'YES',
@@ -161,6 +241,7 @@ export default function MapPreview({location, onRequestLocation}: any) {
       console.error('Permission request failed:', error);
       setLocationError('Permission request failed. Please try again.');
     } finally {
+      isDialogShowing.current = false;
       console.log('--- Permission flow completed ---');
       setIsCheckingPermission(false);
     }

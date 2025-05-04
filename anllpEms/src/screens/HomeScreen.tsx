@@ -257,6 +257,7 @@ const Home: React.FC = () => {
     },
     color: '#ff00ff',
     linkingURI: 'com.anllpems://chat/jane',
+    //@ts-ignore
     parameters: {
       delay: 1800000,
     },
