@@ -6,16 +6,16 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  // ActivityIndicator,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import COLORS from '../constants/colors';
 import {AuthContext} from '../store/auth-context';
 import {Dropdown} from 'react-native-element-dropdown';
-import { SalesLeadData } from '../types/salesLead';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
+import {SalesLeadData} from '../types/salesLead';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RouteProp} from '@react-navigation/native';
+import DialogComp from '../components/DialogComp';
 
 const followupTypeData = [
   {label: 'Call', value: 'Call'},
@@ -38,7 +38,7 @@ const customerOrderPotentialData = [
 ];
 
 type RootStackParamList = {
-  'Add Followup': { salesLead: SalesLeadData };
+  'Add Followup': {salesLead: SalesLeadData};
   // Add other screens here
 };
 
@@ -46,12 +46,33 @@ type AddFollowupScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Add Followup'>;
   route: RouteProp<RootStackParamList, 'Add Followup'>;
 };
+interface DialogState {
+  dialogVisible: boolean;
+  dialogIcon: string;
+  dialogMessage: string;
+}
 
-const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation}) => {
+const AddFollowupScreen: React.FC<AddFollowupScreenProps> = ({
+  route,
+  // navigation,
+}) => {
   const {salesLead} = route.params;
   const authCtx = useContext(AuthContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dialogState, setDialogState] = useState<DialogState>({
+    dialogVisible: false,
+    dialogIcon: '',
+    dialogMessage: '',
+  });
 
+  // Show dialog
+  const showDialog = (message: string, icon: string) => {
+    setDialogState({
+      dialogMessage: message,
+      dialogVisible: true,
+      dialogIcon: icon,
+    });
+  };
   // State matches exactly with API request body structure and sequence
   const [formData, setFormData] = useState({
     salesLeadId: salesLead.wid,
@@ -77,10 +98,27 @@ const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation})
     return `${year}-${month}-${day}`;
   };
 
+  const isFormValid = () => {
+    // const {salesLead, salespersonName, customerName, dateOfFollowUp, followUpType, discussionSummary, customerInterestLevel , nextFollowUpDate , orderPotential, problemsOrObjections} = formData;
+    return formData.salesLeadId &&
+      formData.salespersonName &&
+      formData.customerName &&
+      formData.dateOfFollowUp &&
+      formData.followUpType &&
+      // formData.discussionSummary &&
+      formData.customerInterestLevel
+      ? // formData.nextFollowUpDate &&
+        // formData.orderPotential &&F
+        // formData.problemsOrObjections
+        true
+      : false;
+  };
+
   const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.followUpType || !formData.customerInterestLevel) {
-      Alert.alert('Validation Error', 'Please fill all required fields');
+    if (!isFormValid()) {
+      // Alert.alert('All fields are required!');
+      showDialog('All fields are required!', 'alert');
       return;
     }
 
@@ -103,16 +141,19 @@ const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation})
       };
 
       console.log('Submitting payload:', payload);
-      console.log("token", authCtx.token);
+      console.log('token', authCtx.token);
 
-      const response = await fetch(`${authCtx.apiUrl}/saleslead/followup/post`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authCtx.token}`,
+      const response = await fetch(
+        `${authCtx.apiUrl}/saleslead/followup/post`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authCtx.token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       // Handle response
       const contentType = response.headers.get('content-type');
@@ -128,12 +169,20 @@ const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation})
           result.message || result.error || 'Follow-up submission failed',
         );
       }
-
-      Alert.alert(
-        'Success',
-        result.message || 'Follow-up submitted successfully',
-      );
-      navigation.goBack();
+      showDialog('Follow-up submitted successfully', 'Success');
+      // Alert.alert(
+      //   'Success',
+      //   result.message || 'Follow-up submitted successfully',
+      // );
+      // navigation.goBack();
+      formData.dateOfFollowUp = new Date();
+      formData.followUpType = '';
+      formData.discussionSummary = '';
+      formData.customerInterestLevel = '';
+      formData.nextSteps = '';
+      formData.orderPotential = '';
+      formData.problemsOrObjections = '';
+      formData.nextFollowUpDate = new Date();
     } catch (error) {
       let errorMessage = 'Something went wrong';
       if (error instanceof Error) {
@@ -141,7 +190,8 @@ const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation})
           ? 'Server error occurred'
           : error.message;
       }
-      Alert.alert('Error', errorMessage);
+      showDialog(errorMessage, 'alert');
+      // Alert.alert('Error', errorMessage);
       console.error('Submission error:', error);
     } finally {
       setIsSubmitting(false);
@@ -360,12 +410,13 @@ const AddFollowupScreen:React.FC<AddFollowupScreenProps> = ({route, navigation})
         ]}
         onPress={handleSubmit}
         disabled={isSubmitting}>
-        {isSubmitting ? (
-          <ActivityIndicator color={COLORS.WHITE} />
-        ) : (
-          <Text style={styles.submitButtonText}> {isSubmitting ? 'Submitting...' : 'Submit'}</Text>
-        )}
+        <Text style={styles.submitButtonText}>
+          {' '}
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </Text>
       </TouchableOpacity>
+      {/* for dialog */}
+      <DialogComp dialogState={dialogState} setDialogState={setDialogState} />
     </ScrollView>
   );
 };
@@ -386,14 +437,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 5,
     color: COLORS.DARK_GRAY,
+    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   input: {
+    borderRadius: 4,
+    borderColor: COLORS.DARK_GRAY,
     borderWidth: 1,
-    borderColor: COLORS.LIGHT_GRAY,
-    borderRadius: 5,
     padding: 10,
     fontSize: 16,
   },
@@ -413,7 +465,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: COLORS.DARK_GRAY,
   },
   submitButtonText: {
     color: COLORS.WHITE,
@@ -422,7 +474,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     height: 50,
-    borderColor: COLORS.LIGHT_GRAY,
+    borderColor: COLORS.DARK_GRAY,
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 8,

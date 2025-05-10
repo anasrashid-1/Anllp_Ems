@@ -1,8 +1,7 @@
-import { createContext, useState, ReactNode } from 'react';
+import {createContext, useState, ReactNode, useRef} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 const apiUrl = Config.API_URL;
-
 
 export interface AuthContextType {
   apiUrl: string | undefined;
@@ -12,7 +11,14 @@ export interface AuthContextType {
   userId: string | null;
   profilePicture: string;
   isAuthenticated: boolean;
-  authenticate: (data: { token: string, userName: string, userRole: string, userId: string }) => void;
+  isDialogShowing: React.MutableRefObject<boolean>;
+  setDialogShowing: (showing: boolean) => void;
+  authenticate: (data: {
+    token: string;
+    userName: string;
+    userRole: string;
+    userId: string;
+  }) => void;
   logout: () => void;
 }
 
@@ -24,21 +30,29 @@ export const AuthContext = createContext<AuthContextType>({
   userId: '',
   profilePicture: '',
   isAuthenticated: false,
-  authenticate: () => { },
-  logout: () => { },
+  isDialogShowing: {current: false} as React.MutableRefObject<boolean>,
+  setDialogShowing: () => {},
+  authenticate: () => {},
+  logout: () => {},
 });
 
 interface AuthContextProviderProps {
   children: ReactNode;
 }
 
-function AuthContextProvider({ children }: AuthContextProviderProps) {
+function AuthContextProvider({children}: AuthContextProviderProps) {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const isDialogShowing = useRef(false);
 
-  function authenticate(data: { token: string, userName: string, userRole: string, userId: string }) {
+  function authenticate(data: {
+    token: string;
+    userName: string;
+    userRole: string;
+    userId: string;
+  }) {
     setAuthToken(data.token);
     setUserName(data.userName);
     setUserRole(data.userRole);
@@ -46,10 +60,10 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
     AsyncStorage.setItem('userDetails', JSON.stringify(data))
       .then(() => {
         console.log('User details saved successfully');
-        console.log(authToken, "authToken");
-        console.log(userId, "userId");
+        console.log(authToken, 'authToken');
+        console.log(userId, 'userId');
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('Error saving user details:', error);
       });
   }
@@ -61,6 +75,10 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
     setUserRole(null);
   }
 
+  const setDialogShowing = (showing: boolean) => {
+    isDialogShowing.current = showing;
+  };
+
   const value = {
     apiUrl: apiUrl,
     token: authToken,
@@ -68,13 +86,13 @@ function AuthContextProvider({ children }: AuthContextProviderProps) {
     userRole: userRole,
     userId: userId,
     isAuthenticated: !!authToken,
+    isDialogShowing: isDialogShowing,
+    setDialogShowing: setDialogShowing,
     authenticate: authenticate,
     logout: logout,
   };
 
-  return <AuthContext.Provider value={value}>
-    {children}
-  </AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export default AuthContextProvider;

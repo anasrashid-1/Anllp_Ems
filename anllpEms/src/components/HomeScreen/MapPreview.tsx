@@ -1,4 +1,10 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,18 +17,22 @@ import {
 import {Button} from 'react-native-paper';
 import {WebView} from 'react-native-webview';
 import COLORS from '../../constants/colors';
+//@ts-ignore
 import LocationServicesDialogBox from 'react-native-android-location-services-dialog-box';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {AuthContext} from '../../store/auth-context';
 
 export default function MapPreview({location, onRequestLocation}: any) {
   const [hasPermission, setHasPermission] = useState(false);
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const [isLocationValid, setIsLocationValid] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const [locationServicesEnabled, setLocationServicesEnabled] = useState(true);
+  const [_locationServicesEnabled, setLocationServicesEnabled] = useState(true);
+  const {isDialogShowing} = useContext(AuthContext);
   const checkInterval = useRef<NodeJS.Timeout>();
+  const appState = useRef(AppState.currentState);
   // Add a ref to track if dialog is showing
-const isDialogShowing = useRef(false);
+  // const isDialogShowing = useRef(false);
 
   // Check location validity
   useEffect(() => {
@@ -40,15 +50,15 @@ const isDialogShowing = useRef(false);
         'Permission granted but no valid location - requesting location',
       );
       setLocationError('Getting your location...');
-      onRequestLocation().catch(error => {
+      onRequestLocation().catch((error: Error) => {
         console.log('Location request failed:', error);
         setLocationError('Failed to get location. Please try again.');
       });
     }
-  }, [location, hasPermission]);
+  }, [location, hasPermission, onRequestLocation]);
 
   // Check location services status (Android only)
-  const checkLocationServices = async () => {
+  const checkLocationServices = useCallback(async () => {
     if (Platform.OS === 'android' && !isDialogShowing.current) {
       try {
         isDialogShowing.current = true;
@@ -68,18 +78,18 @@ const isDialogShowing = useRef(false);
             },
           });
         setLocationServicesEnabled(enabled);
+        isDialogShowing.current = false;
         return enabled;
       } catch (error) {
         console.log('Location services check error:', error);
         setLocationServicesEnabled(false);
         return false;
-      }
-      finally{
+      } finally {
         isDialogShowing.current = false;
       }
     }
     return true; // For iOS, assume enabled
-  };
+  }, [isDialogShowing]);
 
   // Continuous location services monitoring
   useEffect(() => {
@@ -98,7 +108,7 @@ const isDialogShowing = useRef(false);
         }
       };
     }
-  }, [hasPermission]);
+  }, [hasPermission, checkLocationServices]);
 
   // Handle app state changes
   useEffect(() => {
@@ -147,6 +157,10 @@ const isDialogShowing = useRef(false);
         android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
         ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
       });
+      if (!permission) {
+        console.error('Permission not supported on this platform');
+        return false;
+      }
 
       console.log(`Checking permission: ${permission}`);
       const status = await check(permission);
@@ -176,8 +190,8 @@ const isDialogShowing = useRef(false);
         console.log('Checking Android location services');
         isDialogShowing.current = true;
         await LocationServicesDialogBox.checkLocationServicesIsEnabled({
-          message: `<font color=${COLORS.DARK_GRAY}>Want to use location services?</font>`,
-          ok: 'YES',
+          message: `<font color=${COLORS.DARK_GRAY}>This app requires location services to be enabled</font>`,
+          ok: 'ENABLE',
           cancel: 'NO',
           style: {
             backgroundColor: COLORS.WHITE,
@@ -195,6 +209,10 @@ const isDialogShowing = useRef(false);
         android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
         ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
       });
+      if (!permission) {
+        console.error('Permission not supported on this platform');
+        return;
+      }
 
       console.log(`Requesting permission: ${permission}`);
       const status = await check(permission);

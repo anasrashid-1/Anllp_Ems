@@ -66,7 +66,7 @@ const renderItem = ({ item }: { item: LeaveRequest }) => {
 };
 
 const RequestList = ({ leaveData }: RequestListProps) => {
-  const [requests, setRequests] = useState<LeaveRequest[]>(leaveData);
+  const [requests, _setRequests] = useState<LeaveRequest[]>(leaveData);
   const [filteredRequests, setFilteredRequests] = useState<LeaveRequest[]>(leaveData);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 

@@ -1,9 +1,8 @@
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useState, useContext, useCallback, useRef} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  // TouchableOpacity,
   ActivityIndicator,
   FlatList,
   RefreshControl,
@@ -11,20 +10,14 @@ import {
 } from 'react-native';
 import COLORS from '../constants/colors';
 import {AuthContext} from '../store/auth-context';
-// import {PlusIcon} from 'react-native-heroicons/solid';
 import {StackScreenProps} from '@react-navigation/stack';
+import {useFocusEffect} from '@react-navigation/native';
 
-import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
-
-
-// Define the sales lead type
 type SalesLead = {
   wid: string;
   firmname: string;
 };
 
-// Define the follow-up item type
 type FollowUp = {
   followUpId: string | number;
   dateOfFollowUp: string;
@@ -35,164 +28,178 @@ type FollowUp = {
   createdAt: string;
 };
 
-// Define navigation params
 type RootStackParamList = {
   FollowupHistory: {salesLead: SalesLead};
   'Add Followup': {salesLead: SalesLead};
 };
 
-// Define component props
 type Props = StackScreenProps<RootStackParamList, 'FollowupHistory'>;
 
 const FollowupHistoryScreen: React.FC<Props> = ({route}) => {
   const {salesLead} = route.params;
   const authCtx = useContext(AuthContext);
   const [followups, setFollowups] = useState<FollowUp[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed initial state to false
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const limit = 10;
+  const flatListRef = useRef<FlatList>(null);
 
-  const fetchFollowups = async (currentPage = 1, isRefreshing = false) => {
-    try {
-      if (isRefreshing) {
-        setIsRefreshing(true);
-        currentPage = 1;
-      } else {
-        setIsLoading(true);
-      }
+  const fetchFollowups = useCallback(
+    async (currentPage = 1, isRefreshing = false) => {
+      try {
+        if (isRefreshing) {
+          setIsRefreshing(true);
+          currentPage = 1;
+        } else if (currentPage === 1) {
+          setIsLoading(true);
+        } else {
+          setIsLoadingMore(true);
+        }
 
-      const response = await fetch(
-        `${authCtx.apiUrl}/saleslead/followup/get?salesLeadId=${salesLead.wid}&page=${currentPage}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authCtx.token}`,
+        const response = await fetch(
+          `${authCtx.apiUrl}/saleslead/followup/get?salesLeadId=${salesLead.wid}&page=${currentPage}&limit=${limit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authCtx.token}`,
+            },
           },
-        },
-      );
+        );
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch follow-ups');
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch follow-ups');
+        }
+
+        if (isRefreshing || currentPage === 1) {
+          setFollowups(data.data);
+        } else {
+          setFollowups(prev => [...prev, ...data.data]);
+        }
+
+        setTotalPages(data.pagination.totalPages);
+        setTotalCount(data.pagination.totalCount);
+        setPage(currentPage);
+      } catch (error: any) {
+        Alert.alert('Error', error.message);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        setIsLoadingMore(false);
       }
+    },
+    [authCtx.apiUrl, authCtx.token, salesLead.wid],
+  );
 
-      if (isRefreshing || currentPage === 1) {
-        setFollowups(data.data);
-      } else {
-        setFollowups(prev => [...prev, ...data.data]);
-      }
-
-      setTotalPages(data.pagination.totalPages);
-      setTotalCount(data.pagination.totalCount);
-      setPage(currentPage);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
   useFocusEffect(
     useCallback(() => {
-      fetchFollowups(); // Re-fetch when the screen is focused
-    }, [])
+      fetchFollowups();
+    }, [fetchFollowups]),
   );
 
-  useEffect(() => {
-    fetchFollowups();
-  }, []);
-
-  const handleLoadMore = () => {
-    if (page < totalPages && !isLoading) {
+  const handleLoadMore = useCallback(() => {
+    if (page < totalPages && !isLoadingMore) {
       fetchFollowups(page + 1);
     }
-  };
+  }, [page, totalPages, isLoadingMore, fetchFollowups]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchFollowups(1, true);
-  };
+  }, [fetchFollowups]);
 
-  const renderFollowupItem = ({item}: {item: FollowUp}) => (
-    <View style={styles.followupCard}>
-      <View style={styles.followupHeader}>
-        <Text style={styles.followupDate}>
-          {new Date(item.dateOfFollowUp).toLocaleDateString()}
+  // Optimized renderItem with React.memo
+  const renderFollowupItem = useCallback(
+    ({item}: {item: FollowUp}) => (
+      <View style={styles.followupCard}>
+        <View style={styles.followupHeader}>
+          <Text style={styles.followupDate}>
+            {new Date(item.dateOfFollowUp).toLocaleDateString()}
+          </Text>
+          <Text style={styles.followupType}>{item.followUpType}</Text>
+        </View>
+        <Text style={styles.followupSummary}>{item.discussionSummary}</Text>
+        <View style={styles.followupFooter}>
+          <Text style={styles.interestLevel}>
+            Interest: {item.customerInterestLevel}
+          </Text>
+          <Text style={styles.nextDate}>
+            Next: {new Date(item.nextFollowUpDate).toLocaleDateString()}
+          </Text>
+        </View>
+        <Text style={styles.createdAt}>
+          Created: {new Date(item.createdAt).toLocaleString()}
         </Text>
-        <Text style={styles.followupType}>{item.followUpType}</Text>
       </View>
-      <Text style={styles.followupSummary}>{item.discussionSummary}</Text>
-      <View style={styles.followupFooter}>
-        <Text style={styles.interestLevel}>
-          Interest: {item.customerInterestLevel}
-        </Text>
-        <Text style={styles.nextDate}>
-          Next: {new Date(item.nextFollowUpDate).toLocaleDateString()}
-        </Text>
-      </View>
-      <Text style={styles.createdAt}>
-        Created: {new Date(item.createdAt).toLocaleString()}
-      </Text>
-    </View>
+    ),
+    [],
   );
 
-  const renderFooter = () => {
-    if (!isLoading || page === 1) return null;
+  const renderFooter = useCallback(() => {
+    if (!isLoadingMore) return null;
     return (
       <View style={styles.footer}>
         <ActivityIndicator size="small" color={COLORS.ACCENT_ORANGE} />
       </View>
     );
-  };
+  }, [isLoadingMore]);
+
+  const keyExtractor = useCallback(
+    (item: FollowUp) => item.followUpId.toString(),
+    [],
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Follow-up History</Text>
-        <Text style={styles.subtitle}>{salesLead.firmname}</Text>
+        <Text style={styles.title}>
+          Follow-up History for {`${salesLead.firmname}`}
+        </Text>
+        {/* <Text style={styles.subtitle}>{salesLead.firmname}</Text> */}
         <Text style={styles.countText}>
           Showing {followups.length} of {totalCount} follow-ups
         </Text>
       </View>
 
       {isLoading && page === 1 ? (
-        <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.ACCENT_ORANGE} />
+        </View>
       ) : followups.length > 0 ? (
         <FlatList
+          ref={flatListRef}
           data={followups}
           renderItem={renderFollowupItem}
-          keyExtractor={item => item.followUpId.toString()}
+          keyExtractor={keyExtractor}
           contentContainerStyle={styles.listContainer}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.2} // More sensitive threshold for smoother loading
           ListFooterComponent={renderFooter}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
               colors={[COLORS.ACCENT_ORANGE]}
+              tintColor={COLORS.ACCENT_ORANGE}
             />
           }
+          initialNumToRender={10} // Render initial 10 items
+          maxToRenderPerBatch={5} // Render 5 new items at a time
+          updateCellsBatchingPeriod={50} // Batch updates every 50ms
+          windowSize={21} // Render 1 screen above + 20 below = 21 total
+          removeClippedSubviews={true} // Improve performance by unmounting offscreen views
         />
       ) : (
         <Text style={styles.emptyText}>No follow-ups recorded yet</Text>
       )}
-
-      {/* <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('Add Followup', {salesLead})}>
-        <View style={styles.buttonContent}>
-          <PlusIcon size={18} color="white" />
-          <Text style={styles.addButtonText}>Add New Follow-up</Text>
-        </View>
-      </TouchableOpacity> */}
     </View>
   );
 };
 
-export default FollowupHistoryScreen;
+export default React.memo(FollowupHistoryScreen);
 
 const styles = StyleSheet.create({
   container: {
@@ -219,7 +226,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   listContainer: {
-    paddingBottom: 80,
+    paddingBottom: 20,
   },
   followupCard: {
     backgroundColor: COLORS.WHITE,
@@ -276,35 +283,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.DARK_GRAY,
   },
-  addButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: COLORS.ACCENT_ORANGE,
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  addButtonText: {
-    color: COLORS.WHITE,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
   footer: {
     paddingVertical: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
