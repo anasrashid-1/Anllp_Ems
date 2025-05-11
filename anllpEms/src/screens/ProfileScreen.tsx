@@ -1,7 +1,15 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { Alert, Button, Image, Modal, StyleSheet, Text, View } from 'react-native';
+import React, {useContext, useState, useEffect} from 'react';
+import {
+  Alert,
+  Button,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import COLORS from '../constants/colors';
-import { AuthContext, AuthContextType } from '../store/auth-context';
+import {AuthContext, AuthContextType} from '../store/auth-context';
 import DialogComp from '../components/DialogComp';
 import Input from '../components/LoginScreen/Input';
 
@@ -11,22 +19,45 @@ interface DialogState {
   dialogMessage: string;
 }
 
+interface AttendanceData {
+  attendanceId: number;
+  userId: number;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  status: 'Active' | 'Not Active';
+  sessionDuration: string | null;
+  createdAt: string;
+  attendanceDate: string;
+  onLeave: boolean;
+  length: number;
+}
+
+interface AttendanceResponse {
+  isError: boolean;
+  message: string;
+  data: AttendanceData[];
+}
+
 const ProfileScreen = () => {
   const authCtx = useContext<AuthContextType>(AuthContext);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isOldPasswordVisible, setOldPasswordVisible] = useState<boolean>(false);
-  const [isNewPasswordVisible, setNewPasswordVisible] = useState<boolean>(false);
-  const [isConfirmPasswordVisible, setConfirmPasswordVisible] = useState<boolean>(false);
+  const [isOldPasswordVisible, setOldPasswordVisible] =
+    useState<boolean>(false);
+  const [isNewPasswordVisible, setNewPasswordVisible] =
+    useState<boolean>(false);
+  const [isConfirmPasswordVisible, setConfirmPasswordVisible] =
+    useState<boolean>(false);
   const [error, setError] = useState('');
+  const [currentAttendance, setCurrentAttendance] =
+    useState<AttendanceData | null>(null);
 
   // Profile state
   const [name, setName] = useState<string>(authCtx.userName || 'N/A');
   const [userId, setUserId] = useState<string>(authCtx.userId || 'N/A');
   const [userRole, setUserRole] = useState<string>(authCtx.userRole || 'N/A');
-
   const [dialogState, setDialogState] = useState<DialogState>({
     dialogVisible: false,
     dialogIcon: '',
@@ -41,6 +72,76 @@ const ProfileScreen = () => {
     });
   };
 
+  const fetchAttendanceStatus = async (): Promise<AttendanceResponse> => {
+    try {
+      const response = await fetch(
+        `${authCtx.apiUrl}/attendance/status/${authCtx.userId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authCtx.token}`,
+          },
+        },
+      );
+
+      const data: AttendanceResponse = await response.json();
+      console.log(data, 'this is attendanceData');
+
+      if (!data.isError && data.data && data.data.length > 0) {
+        console.log(data.data[0], 'this is attendanceData[0]');
+        setCurrentAttendance(data.data[0]);
+      } else {
+        setCurrentAttendance(null);
+      }
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showDialog(err.message, 'alert');
+      } else {
+        showDialog('An unknown error occurred', 'alert');
+      }
+      return {isError: true, message: 'Error fetching attendance', data: []};
+    }
+  };
+
+  const handleLogout = async () => {
+    const attendanceResponse = await fetchAttendanceStatus();
+    console.log(attendanceResponse, 'attendanceResponse');
+    if (currentAttendance === null) return;
+
+    // Allow logout if data array is empty
+    if (currentAttendance.length === 0) {
+      authCtx.logout();
+      return;
+    }
+
+    // Allow logout if status is "Not Active"
+    if (currentAttendance?.status === 'Not Active') {
+      authCtx.logout();
+      return;
+    }
+
+    // Prevent logout if status is "Active"
+    if (currentAttendance?.status === 'Active') {
+      Alert.alert(
+        'Checkout Required',
+        'You are currently checked in. Please check out before logging out.',
+        [
+          {
+            text: 'OK',
+            style: 'default',
+          },
+        ],
+        {cancelable: false},
+      );
+      return;
+    }
+
+    // Default case - allow logout
+    authCtx.logout();
+  };
+
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
@@ -52,9 +153,9 @@ const ProfileScreen = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authCtx.token}`,
+          Authorization: `Bearer ${authCtx.token}`,
         },
-        body: JSON.stringify({ oldPassword, newPassword }),
+        body: JSON.stringify({oldPassword, newPassword}),
       });
 
       const data = await response.json();
@@ -89,13 +190,16 @@ const ProfileScreen = () => {
       <View style={styles.profileCard}>
         {/* Profile Image */}
         <Image
-          source={{ uri: authCtx.profilePicture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' }}
+          source={{
+            uri:
+              authCtx.profilePicture ||
+              'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+          }}
           style={styles.profileImage}
         />
 
         {/* Profile Information */}
         <View style={styles.profileInfo}>
-
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>User ID:</Text>
             <Text style={styles.infoValue}>{userId}</Text>
@@ -105,7 +209,6 @@ const ProfileScreen = () => {
             <Text style={styles.infoLabel}>Name:</Text>
             <Text style={styles.infoValue}>{name}</Text>
           </View>
-
 
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Role:</Text>
@@ -122,8 +225,8 @@ const ProfileScreen = () => {
           color={COLORS.ACCENT_ORANGE}
         />
         <Button
-          onPress={() => authCtx.logout()}
-          title="Logout"
+          onPress={handleLogout}
+          title="Logoutzzz"
           color={COLORS.PRIMARY_RED}
           accessibilityLabel="Logout from the app"
         />
@@ -134,8 +237,7 @@ const ProfileScreen = () => {
         visible={isModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
+        onRequestClose={() => setIsModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Change Password</Text>
@@ -150,7 +252,9 @@ const ProfileScreen = () => {
               secureTextEntry={!isOldPasswordVisible}
               onUpdateValue={setOldPassword}
               showPasswordToggle={true}
-              onTogglePassword={() => setOldPasswordVisible(!isOldPasswordVisible)}
+              onTogglePassword={() =>
+                setOldPasswordVisible(!isOldPasswordVisible)
+              }
               isPasswordVisible={isOldPasswordVisible}
             />
 
@@ -162,7 +266,9 @@ const ProfileScreen = () => {
               secureTextEntry={!isNewPasswordVisible}
               onUpdateValue={setNewPassword}
               showPasswordToggle={true}
-              onTogglePassword={() => setNewPasswordVisible(!isNewPasswordVisible)}
+              onTogglePassword={() =>
+                setNewPasswordVisible(!isNewPasswordVisible)
+              }
               isPasswordVisible={isNewPasswordVisible}
             />
 
@@ -174,7 +280,9 @@ const ProfileScreen = () => {
               secureTextEntry={!isConfirmPasswordVisible}
               showPasswordToggle={true}
               onUpdateValue={setConfirmPassword}
-              onTogglePassword={() => setConfirmPasswordVisible(!isConfirmPasswordVisible)}
+              onTogglePassword={() =>
+                setConfirmPasswordVisible(!isConfirmPasswordVisible)
+              }
               isPasswordVisible={isConfirmPasswordVisible}
             />
 
@@ -207,7 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 8,
     flexDirection: 'row',
