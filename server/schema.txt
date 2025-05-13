@@ -24,7 +24,6 @@ CREATE TABLE Attendance (
     onLeave BIT DEFAULT 0
 );
 
-
 CREATE TABLE locationLogs (
     locationId INT PRIMARY KEY IDENTITY(1,1),
     attendanceId INT NOT NULL FOREIGN KEY REFERENCES attendance(attendanceId),
@@ -232,8 +231,6 @@ CREATE TABLE employeeDailyExpenses (
 	rejectionReason NVARCHAR(255) NULL,
 );
 
-
-
 CREATE TABLE salesLeadFollowUps(
     followUpId INT IDENTITY(1,1) PRIMARY KEY,
     salesLeadId NUMERIC(18,0) NOT NULL,
@@ -250,3 +247,15 @@ CREATE TABLE salesLeadFollowUps(
     problemsOrObjections NVARCHAR(MAX) NULL,
     createdAt DATETIME DEFAULT GETDATE()
 );
+
+create table technicalAdvice (
+	adviseId INT PRIMARY KEY IDENTITY(1,1),
+    growerId NUMERIC(18,0) NOT NULL,
+	employeeId INT REFERENCES appUsers(userID),
+	adviseDate DATE NOT NULL,
+	sprinting NVARCHAR(100),
+	motility NVARCHAR(500),
+	diseases NVARCHAR(500),
+	recomendations NVARCHAR(500),
+	remarks NVARCHAR(500)
+)

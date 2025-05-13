@@ -20,6 +20,7 @@ const dailyExpensesRoutes = require("./routes/dailyExpensesRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const salesLeadRoutes = require("./routes/salesLeadsRoutes");
 const growerRoutes = require("./routes/growerRoutes");
+const technicalAdviceRoutes = require("./routes/technicalAdviceRoutes");
 
 
 app.use('/api/auth', authRoutes);
@@ -28,6 +29,7 @@ app.use('/api/dailyexpenses', dailyExpensesRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/saleslead', salesLeadRoutes);
 app.use('/api/growerdetails', growerRoutes);
+app.use('/api/technicaladvice', technicalAdviceRoutes);
 
 
 app.get('/', (req, res) => {

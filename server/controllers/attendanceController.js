@@ -52,10 +52,19 @@ const getAttendanceStatus = async (req, res) => {
             type: connection.QueryTypes.SELECT,
         });
 
+
+        const query2 = "select deviceID, deviceName from appUsers where userId = ?";
+        const deviceDetails = await connection.query(query2, {
+            replacements: [userId],
+            type: connection.QueryTypes.SELECT,
+        });
+
+
         res.status(200).json({
             isError: false,
             message: "attendance status fetched successfully",
             data,
+            deviceDetails
         });
 
     } catch (error) {
@@ -264,5 +273,5 @@ const getUserAttendance = async (req, res) => {
 }
 
 
-module.exports = {getAttendanceStatus, postAttendanceLogs , getAttendanceLogs, postCheckInUser, patchCheckOut, getUserAttendance};
+module.exports = { getAttendanceStatus, postAttendanceLogs, getAttendanceLogs, postCheckInUser, patchCheckOut, getUserAttendance };
 

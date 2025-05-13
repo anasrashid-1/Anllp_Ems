@@ -4,13 +4,26 @@ const jwt = require("jsonwebtoken");
 
 const login = async (req, res) => {
     try {
-        const { empId, password } = req.body;
+        const { empId, password, deviceId, deviceName } = req.body;
         const query = `select * from appUsers where userId = ${empId}`;
         const user = await connection.query(query, {
             type: connection.QueryTypes.SELECT,
         });
         if (user.length > 0) {
             if (user[0].userId == empId && user[0].passwordHash === password) {
+
+                // If device info is provided, update the user record
+                if (deviceId || deviceName) {
+                    const updateQuery = `
+                        UPDATE appUsers
+                        SET 
+                            deviceID = ${deviceId ? `'${deviceId}'` : 'NULL'},
+                            deviceName = ${deviceName ? `'${deviceName}'` : 'NULL'}
+                        WHERE userId = ${empId}
+                    `;
+                    await connection.query(updateQuery);
+                }
+
                 var token = jwt.sign(
                     {
                         userId: user[0].userId,
