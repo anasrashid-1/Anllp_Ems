@@ -33,8 +33,7 @@ const getAttendanceStatus = async (req, res) => {
                      from appUsers u inner join Attendance a on u.userId = a.userId 
                      and a.status = ?`
             replacements = [status];
-        }
-        else if (!userId && !status && !date) {
+        } else if (!userId && !status && !date) {
             query = `select u.userId, u.username, 
                      a.attendanceId, a.checkInTime, a.checkOutTime, a.sessionDuration, a.createdAt, a.attendanceDate, a.status
                      from appUsers u left join Attendance a on u.userId = a.userId 
@@ -52,13 +51,14 @@ const getAttendanceStatus = async (req, res) => {
             type: connection.QueryTypes.SELECT,
         });
 
-
-        const query2 = "select deviceID, deviceName from appUsers where userId = ?";
-        const deviceDetails = await connection.query(query2, {
-            replacements: [userId],
-            type: connection.QueryTypes.SELECT,
-        });
-
+        let deviceDetails = [];
+        if (userId) {
+            const query2 = "select deviceID, deviceName from appUsers where userId = ?";
+            deviceDetails = await connection.query(query2, {
+                replacements: [userId],
+                type: connection.QueryTypes.SELECT,
+            });
+        }
 
         res.status(200).json({
             isError: false,
