@@ -1,6 +1,6 @@
 # EmployeeManagementSystem
 
-A full-stack mobile application for field workforce management, built for **Abraq Nurseries**. The system enables real-time employee tracking, digital attendance management, leave administration, expense reporting with geo-tagged photo evidence, and sales lead logging — all accessible via a cross-platform mobile app backed by a Node.js REST API.
+A full-stack mobile application for field workforce management. The system enables real-time employee tracking, digital attendance management, leave administration, expense reporting with geo-tagged photo evidence, and sales lead logging — all accessible via a cross-platform mobile app backed by a Node.js REST API.
 
 ---
 
